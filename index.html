@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Configuration PWA mobile Android -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#581c2c">
+    <meta name="application-name" content="Ma Cave">
+    <title>Ma Cave & Sommelier IA</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Polices élégantes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        wine: {
+                            50: '#fdf2f4',
+                            100: '#fce7eb',
+                            200: '#f8d0d9',
+                            700: '#881337',
+                            800: '#701a32',
+                            900: '#581c2c',
+                            950: '#3b0c18',
+                        },
+                        cream: {
+                            50: '#faf8f5',
+                            100: '#f4efe6',
+                            200: '#e8dfd1',
+                        },
+                        gold: {
+                            500: '#b45309',
+                            600: '#92400e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #faf8f5;
+            overscroll-behavior-y: none;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen flex flex-col pb-24">
+
+    <!-- EN-TÊTE -->
+    <header class="bg-wine-900 text-cream-50 sticky top-0 z-30 shadow-md px-4 py-3.5 rounded-b-2xl">
+        <div class="max-w-lg mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <div class="bg-wine-800 p-2 rounded-xl border border-white/10 text-amber-300">
+                    <!-- Icône Bouteille / Verre SVG inline -->
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-serif text-xl font-bold text-white leading-tight">Ma Cave</h1>
+                    <p class="text-[11px] text-wine-200">Inventaire & Sommelier IA</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Bouton Sauvegarde Export / Import discret -->
+                <button type="button" onclick="openBackupModal()" title="Sauvegarde & Restauration"
+                    class="p-2 rounded-xl bg-wine-950/60 hover:bg-wine-800 border border-white/10 text-cream-100 active:scale-95 transition-transform">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </button>
+
+                <!-- Compteur total bouteilles -->
+                <div class="bg-wine-950/70 border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                    <span id="header-total-count" class="font-bold text-base text-amber-300">0</span>
+                    <span class="text-[11px] text-wine-100 uppercase tracking-wider font-medium">btl</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast-container" class="fixed top-20 left-4 right-4 z-50 pointer-events-none flex flex-col items-center gap-2"></div>
+
+    <!-- CONTENU PRINCIPAL : LISTE DE LA CAVE -->
+    <main class="flex-1 max-w-lg w-full mx-auto px-4 pt-4 space-y-4">
+
+        <!-- Bannière d'action rapide : Assistant Accord Mets -> Cave -->
+        <button type="button" onclick="openDishModal()"
+            class="w-full bg-gradient-to-r from-wine-900 via-wine-800 to-wine-950 text-white p-3.5 rounded-2xl shadow-md border border-amber-400/30 flex items-center justify-between gap-3 active:scale-[0.98] transition-all text-left">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-300/30 flex items-center justify-center text-xl shrink-0">
+                    🍽️
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-serif font-bold text-sm sm:text-base text-white truncate">Quel vin pour mon plat ?</span>
+                        <span class="text-[10px] font-bold uppercase bg-amber-400 text-wine-950 px-1.5 py-0.5 rounded-full shrink-0">Sommelier</span>
+                    </div>
+                    <p class="text-[11px] text-wine-100 truncate">Trouve la bouteille idéale actuellement en stock</p>
+                </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-amber-300">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </div>
+        </button>
+
+        <!-- Barre de recherche -->
+        <div class="relative">
+            <svg class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input type="text" id="search-input" placeholder="Rechercher un vin, une appellation, une année..."
+                class="w-full bg-white border border-cream-200 rounded-xl pl-10 pr-9 py-3 text-sm shadow-2xs focus:outline-none focus:ring-2 focus:ring-wine-900/20 focus:border-wine-900 transition-all">
+            <button type="button" id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Filtres rapides par type -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1" id="filter-chips">
+            <button type="button" data-filter="Toutes" onclick="setFilter('Toutes')" class="filter-chip bg-wine-900 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-2xs transition-all">
+                Toutes
+            </button>
+            <button type="button" data-filter="Rouge" onclick="setFilter('Rouge')" class="filter-chip bg-white text-stone-600 border border-cream-200 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-red-800"></span> Rouge
+            </button>
+            <button type="button" data-filter="Blanc" onclick="setFilter('Blanc')" class="filter-chip bg-white text-stone-600 border border-cream-200 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-300 border border-amber-500"></span> Blanc
+            </button>
+            <button type="button" data-filter="Rosé" onclick="setFilter('Rosé')" class="filter-chip bg-white text-stone-600 border border-cream-200 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-300"></span> Rosé
+            </button>
+            <button type="button" data-filter="Champagne" onclick="setFilter('Champagne')" class="filter-chip bg-white text-stone-600 border border-cream-200 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-yellow-400"></span> Champagne
+            </button>
+            <button type="button" data-filter="Autre" onclick="setFilter('Autre')" class="filter-chip bg-white text-stone-600 border border-cream-200 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-700"></span> Autre
+            </button>
+        </div>
+
+        <!-- Liste des bouteilles -->
+        <div id="wine-list" class="space-y-3"></div>
+
+        <!-- État vide -->
+        <div id="empty-state" class="hidden text-center py-12 px-5 bg-white rounded-2xl border border-cream-200 shadow-2xs">
+            <div class="w-14 h-14 bg-wine-50 text-wine-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/>
+                </svg>
+            </div>
+            <h3 class="font-serif text-lg font-bold text-stone-800 mb-1">Aucune bouteille trouvée</h3>
+            <p class="text-xs text-stone-500 mb-5">Appuie sur le bouton + en bas à droite pour ajouter une bouteille à ta cave.</p>
+            <button type="button" onclick="openAddModal()" class="bg-wine-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm active:scale-95 transition-transform inline-flex items-center gap-2">
+                <span>+ Ajouter une bouteille</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- BOUTON FLOTTANT D'AJOUT (+) TOUJOURS ACCESSIBLE -->
+    <button type="button" onclick="openAddModal()" aria-label="Ajouter une bouteille"
+        class="fixed bottom-6 right-5 z-30 bg-wine-900 hover:bg-wine-800 text-white px-5 py-3.5 rounded-full shadow-xl border-2 border-white/20 flex items-center gap-2 font-semibold text-sm active:scale-95 transition-all">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Ajouter</span>
+    </button>
+
+    <!-- ==========================================
+         MODALE 1 : AJOUTER UNE BOUTEILLE
+         ========================================== -->
+    <div id="add-modal" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto shadow-2xl animate-fade-in">
+            <!-- En-tête modale ajout -->
+            <div class="sticky top-0 bg-white z-10 px-5 pt-4 pb-3 border-b border-cream-100 flex items-center justify-between">
+                <div>
+                    <h2 class="font-serif text-xl font-bold text-wine-900">Ajouter une bouteille</h2>
+                    <p class="text-xs text-stone-500">Seul le nom est obligatoire</p>
+                </div>
+                <button type="button" onclick="closeAddModal()" class="p-2 bg-stone-100 hover:bg-stone-200 rounded-full text-stone-600">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Formulaire sans validation HTML5 bloquante -->
+            <form id="add-wine-form" novalidate class="p-5 pb-12 space-y-4">
+                <!-- Nom de la cuvée -->
+                <div>
+                    <label for="add-name" class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                        Nom de la cuvée / Domaine *
+                    </label>
+                    <input type="text" id="add-name" placeholder="Ex: Château Margaux, Ruinart Blanc de Blancs..."
+                        class="w-full bg-cream-50 border border-cream-200 rounded-xl px-3.5 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-wine-900/20 focus:border-wine-900">
+                </div>
+
+                <!-- Sélecteur visuel du Type -->
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">Type de vin</label>
+                    <input type="hidden" id="add-type" value="Rouge">
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="add-type-selector">
+                        <button type="button" data-type="Rouge" onclick="selectAddType('Rouge')" class="add-type-btn bg-wine-900 text-white border border-wine-900 py-2.5 px-2 rounded-xl text-xs font-semibold text-center transition-all">
+                            🍷 Rouge
+                        </button>
+                        <button type="button" data-type="Blanc" onclick="selectAddType('Blanc')" class="add-type-btn bg-cream-50 text-stone-700 border border-cream-200 py-2.5 px-2 rounded-xl text-xs font-medium text-center transition-all">
+                            🥂 Blanc
+                        </button>
+                        <button type="button" data-type="Rosé" onclick="selectAddType('Rosé')" class="add-type-btn bg-cream-50 text-stone-700 border border-cream-200 py-2.5 px-2 rounded-xl text-xs font-medium text-center transition-all">
+                            🌸 Rosé
+                        </button>
+                        <button type="button" data-type="Champagne" onclick="selectAddType('Champagne')" class="add-type-btn bg-cream-50 text-stone-700 border border-cream-200 py-2.5 px-2 rounded-xl text-xs font-medium text-center transition-all">
+                            🍾 Champagne
+                        </button>
+                        <button type="button" data-type="Autre" onclick="selectAddType('Autre')" class="add-type-btn bg-cream-50 text-stone-700 border border-cream-200 py-2.5 px-2 rounded-xl text-xs font-medium text-center transition-all">
+                            🍯 Autre
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Appellation / Région -->
+                <div>
+                    <label for="add-appellation" class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                        Appellation / Région <span class="text-[11px] font-normal lowercase text-stone-400">(facultatif)</span>
+                    </label>
+                    <input type="text" id="add-appellation" placeholder="Ex: Pessac-Léognan, Champagne, Côtes du Rhône..."
+                        class="w-full bg-cream-50 border border-cream-200 rounded-xl px-3.5 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-wine-900/20 focus:border-wine-900">
+                </div>
+
+                <!-- Année (100% facultative) & Quantité (- / +) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="add-year" class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                            Année <span class="text-[10px] font-normal lowercase text-stone-400">(vide = NM)</span>
+                        </label>
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="add-year" placeholder="Non millésimé"
+                            class="w-full bg-cream-50 border border-cream-200 rounded-xl px-3.5 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-wine-900/20 focus:border-wine-900">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">Quantité</label>
+                        <div class="flex items-center justify-between bg-cream-50 border border-cream-200 rounded-xl p-1.5 h-[46px]">
+                            <button type="button" onclick="adjustAddQty(-1)" class="w-9 h-8 rounded-lg bg-white border border-cream-200 font-bold text-stone-700 active:scale-90">-</button>
+                            <span id="add-qty-display" class="font-bold text-base text-wine-900">1</span>
+                            <button type="button" onclick="adjustAddQty(1)" class="w-9 h-8 rounded-lg bg-wine-900 text-white font-bold active:scale-90">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section dépliable : Mes propres conseils -->
+                <div class="border border-cream-200 rounded-xl overflow-hidden bg-cream-50/50">
+                    <button type="button" onclick="toggleAddManualSection()"
+                        class="w-full px-4 py-3 flex items-center justify-between text-left text-xs font-semibold text-stone-700 hover:bg-cream-100/70 transition-colors">
+                        <span class="flex items-center gap-2">
+                            <span>✍️ Ajouter mes propres conseils (facultatif)</span>
+                        </span>
+                        <svg id="add-manual-chevron" class="w-4 h-4 text-stone-500 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+
+                    <div id="add-manual-fields" class="hidden p-4 pt-2 border-t border-cream-200 bg-white space-y-3">
+                        <p class="text-[11px] text-stone-500">Utile pour les bouteilles peu connues ou tes notes personnelles. Sinon, tu pourras utiliser le Sommelier IA après l'ajout.</p>
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">🍽️ Avec quoi le boire</label>
+                            <textarea id="add-manual-pairing" rows="2" placeholder="Ex: Viande grillée, huîtres, fromage affiné..."
+                                class="w-full bg-cream-50 border border-cream-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-wine-900"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">📅 Quand le boire</label>
+                                <input type="text" id="add-manual-when" placeholder="Ex: Dès maintenant - 2029"
+                                    class="w-full bg-cream-50 border border-cream-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-wine-900">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">⏳ Garde</label>
+                                <input type="text" id="add-manual-aging" placeholder="Ex: 5 à 8 ans"
+                                    class="w-full bg-cream-50 border border-cream-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-wine-900">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">💶 Prix moyen actuel (€)</label>
+                            <input type="text" id="add-manual-price" placeholder="Ex: 35 €"
+                                class="w-full bg-cream-50 border border-cream-200 rounded-lg px-3 py-2 text-xs focus:bg-white focus:outline-none focus:border-wine-900">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bouton de validation principal -->
+                <div class="pt-2">
+                    <button type="button" id="btn-submit-add" onclick="handleAddBottle()"
+                        class="w-full bg-wine-900 hover:bg-wine-800 text-white font-bold py-4 px-5 rounded-xl shadow-lg flex items-center justify-center gap-2 text-base active:scale-[0.98] transition-all">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span>Ajouter à ma cave</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODALE 2 : FICHE DÉTAILLÉE & SOMMELIER IA
+         ========================================== -->
+    <div id="detail-modal" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto p-5 pb-10 space-y-4 shadow-2xl animate-fade-in">
+            <!-- Mode Lecture En-tête -->
+            <div id="detail-header-view" class="flex items-start justify-between gap-3 border-b border-cream-100 pb-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span id="detail-type-badge" class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full"></span>
+                        <span id="detail-year-badge" class="text-xs font-bold text-wine-900 bg-cream-100 px-2.5 py-0.5 rounded-md border border-cream-200"></span>
+                    </div>
+                    <h2 id="detail-name" class="font-serif text-xl font-bold text-stone-900 leading-snug"></h2>
+                    <p id="detail-appellation" class="text-sm text-stone-500 mt-0.5"></p>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onclick="toggleEditBottleInfo(true)" title="Modifier les infos de la bouteille"
+                        class="p-2 bg-cream-100 hover:bg-cream-200 rounded-full text-wine-900 active:scale-95">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                        </svg>
+                    </button>
+                    <button type="button" onclick="closeDetailModal()" class="p-2 bg-stone-100 hover:bg-stone-200 rounded-full text-stone-600">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode Édition Infos de Base -->
+            <div id="detail-header-edit" class="hidden bg-cream-50 border border-cream-200 rounded-xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase text-wine-900">Modifier la bouteille</span>
+                    <button type="button" onclick="toggleEditBottleInfo(false)" class="text-xs text-stone-500 underline">Annuler</button>
+                </div>
+                <input type="text" id="edit-info-name" placeholder="Nom de la cuvée" class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2.5 text-sm">
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="edit-info-type" class="w-full bg-white border border-cream-200 rounded-lg px-2.5 py-2.5 text-xs font-medium">
+                        <option value="Rouge">🍷 Rouge</option>
+                        <option value="Blanc">🥂 Blanc</option>
+                        <option value="Rosé">🌸 Rosé</option>
+                        <option value="Champagne">🍾 Champagne</option>
+                        <option value="Autre">🍯 Autre</option>
+                    </select>
+                    <input type="text" inputmode="numeric" id="edit-info-year" placeholder="Année (vide = NM)" class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2.5 text-xs">
+                </div>
+                <input type="text" id="edit-info-appellation" placeholder="Appellation / Région" class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2.5 text-xs">
+                <button type="button" onclick="saveEditedBottleInfo()" class="w-full bg-wine-900 text-white text-xs font-bold py-2.5 rounded-lg active:scale-95">
+                    Enregistrer les modifications
+                </button>
+            </div>
+
+            <!-- Stock en cave -->
+            <div class="flex items-center justify-between bg-cream-50 p-3.5 rounded-xl border border-cream-200">
+                <span class="text-sm font-semibold text-stone-700">Bouteilles en stock</span>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="changeDetailQty(-1)" class="w-9 h-9 rounded-full bg-white border border-stone-300 font-bold text-stone-700 shadow-2xs active:scale-90">-</button>
+                    <span id="detail-qty" class="text-lg font-bold text-wine-900 w-7 text-center">1</span>
+                    <button type="button" onclick="changeDetailQty(1)" class="w-9 h-9 rounded-full bg-wine-900 text-white font-bold shadow-2xs active:scale-90">+</button>
+                </div>
+            </div>
+
+            <!-- Bloc Conseils de dégustation & Sommelier IA -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-wine-900">Conseils de dégustation</h3>
+                        <span id="detail-source-badge" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full"></span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="openAdviceEditor()"
+                            class="text-xs font-semibold text-stone-700 bg-cream-100 hover:bg-cream-200 px-2.5 py-1.5 rounded-lg border border-cream-200 active:scale-95 transition-all">
+                            ✍️ Modifier mes conseils
+                        </button>
+                        <button type="button" onclick="runSommelierAI()"
+                            class="text-xs font-semibold text-wine-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-300 active:scale-95 transition-all">
+                            ✨ Sommelier IA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenu dynamique des 4 rubriques ou de l'éditeur manuel -->
+                <div id="detail-advice-container"></div>
+            </div>
+
+            <!-- Suppression avec double-clic de sécurité -->
+            <div class="pt-3 border-t border-cream-100 flex items-center justify-between">
+                <button type="button" id="btn-delete-bottle" onclick="handleDeleteBottle()"
+                    class="text-red-600 hover:bg-red-50 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors">
+                    🗑️ Supprimer ce vin
+                </button>
+                <button type="button" onclick="closeDetailModal()" class="bg-stone-800 text-white px-5 py-2.5 rounded-xl text-sm font-medium">
+                    Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODALE 3 : SAUVEGARDE EXPORT / IMPORT JSON
+         ========================================== -->
+    <div id="backup-modal" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-5 pb-8 space-y-4 shadow-2xl animate-fade-in">
+            <div class="flex items-center justify-between border-b border-cream-100 pb-3">
+                <h2 class="font-serif text-lg font-bold text-wine-900">Sauvegarde de ma cave</h2>
+                <button type="button" onclick="closeBackupModal()" class="p-2 bg-stone-100 rounded-full text-stone-600">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-xs text-stone-600 leading-relaxed">
+                Tes bouteilles sont sauvegardées automatiquement sur ton appareil. Tu peux aussi exporter un fichier <strong>.json</strong> de secours ou restaurer une sauvegarde existante.
+            </p>
+
+            <div class="space-y-2.5">
+                <button type="button" onclick="exportCellarJSON()"
+                    class="w-full bg-wine-900 text-white font-semibold py-3.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform">
+                    <span>⬇️ Exporter ma cave (.json)</span>
+                </button>
+
+                <label class="w-full bg-cream-100 hover:bg-cream-200 text-stone-800 border border-cream-200 font-semibold py-3.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
+                    <span>⬆️ Importer une sauvegarde (.json)</span>
+                    <input type="file" accept=".json" class="hidden" onchange="importCellarJSON(event)">
+                </label>
+            </div>
+
+            <div class="bg-cream-50 p-3.5 rounded-xl border border-cream-200 text-xs text-stone-600 space-y-1">
+                <p class="font-bold text-wine-900">💡 Installer sur l'écran d'accueil Android :</p>
+                <p>Dans Chrome, appuie sur le menu <strong>⋮</strong> en haut à droite puis <strong>"Ajouter à l'écran d'accueil"</strong>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODALE 4 : ASSISTANT "QUEL VIN POUR MON PLAT ?"
+         ========================================== -->
+    <div id="dish-modal" class="fixed inset-0 z-40 hidden bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto shadow-2xl animate-fade-in">
+            <!-- En-tête sticky -->
+            <div class="sticky top-0 bg-wine-900 text-white z-10 px-5 py-4 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl">🍽️</span>
+                    <div>
+                        <h2 class="font-serif text-lg font-bold leading-tight">Quel vin pour mon plat ?</h2>
+                        <p class="text-[11px] text-wine-200">Analyse uniquement vos bouteilles en stock (&gt; 0)</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeDishModal()" class="p-2 bg-wine-950/60 hover:bg-wine-800 rounded-full text-cream-100">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-5 pb-12 space-y-4">
+                <!-- Saisie libre du plat -->
+                <div>
+                    <label for="dish-input" class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                        Que préparez-vous à manger ?
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="dish-input" placeholder="Ex: raclette, magret de canard, sushis, huîtres..."
+                            onkeydown="if(event.key==='Enter'){ event.preventDefault(); findWinesForDish(); }"
+                            class="flex-1 bg-cream-50 border border-cream-200 rounded-xl px-3.5 py-3 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-wine-900/20 focus:border-wine-900">
+                        <button type="button" onclick="findWinesForDish()"
+                            class="bg-wine-900 hover:bg-wine-800 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-sm active:scale-95 transition-transform shrink-0">
+                            Trouver
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Raccourcis rapides par catégories de plats -->
+                <div>
+                    <p class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Ou choisir une famille de plats :</p>
+                    <div class="flex flex-wrap gap-1.5" id="dish-presets">
+                        <button type="button" onclick="selectDishPreset('Viande rouge / Gibier')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🥩 Viande rouge / Gibier
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Volaille / Viande blanche')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🍗 Volaille / Viande blanche
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Poisson / Fruits de mer')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🐟 Poisson / Fruits de mer
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Fromages / Raclette')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🧀 Fromages / Raclette
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Plats épicés / Exotiques')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🌶️ Plats épicés / Exotiques
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Végétarien / Champignons')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🍄 Végétarien / Champignons
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Apéritif / Festif')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🥂 Apéritif / Festif
+                        </button>
+                        <button type="button" onclick="selectDishPreset('Dessert / Chocolat')" class="dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all">
+                            🍫 Dessert / Chocolat
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Zone de résultats des recommandations -->
+                <div id="dish-results-container" class="pt-1 space-y-3">
+                    <div class="bg-cream-50 border border-dashed border-cream-200 rounded-2xl p-5 text-center space-y-1.5">
+                        <p class="text-xs font-semibold text-stone-700">Saisissez un plat ou appuyez sur une catégorie ci-dessus</p>
+                        <p class="text-[11px] text-stone-500">Le Sommelier comparera votre menu avec vos bouteilles disponibles en cave et leur apogée.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         LOGIQUE JAVASCRIPT AUTONOME & FIABILISÉE
+         ========================================== -->
+    <script>
+        const STORAGE_KEY = "ma_cave_cellar_v2";
+        window._memoryStorage = window._memoryStorage || {};
+
+        // Accès sécurisé au stockage (fonctionne même en iframe sandboxée ou navigation privée)
+        function safeGetStorage(key) {
+            try {
+                const val = window.localStorage.getItem(key);
+                if (val !== null) return val;
+            } catch (e) {
+                // Repli silencieux sur la mémoire vive
+            }
+            return window._memoryStorage[key] || null;
+        }
+
+        function safeSetStorage(key, value) {
+            window._memoryStorage[key] = value;
+            try {
+                window.localStorage.setItem(key, value);
+            } catch (e) {
+                // Repli silencieux sur la mémoire vive
+            }
+        }
+
+        // État global
+        let wines = [];
+        let currentFilter = "Toutes";
+        let searchQuery = "";
+        let addQty = 1;
+        let activeWineId = null;
+
+        // Initialisation
+        document.addEventListener("DOMContentLoaded", () => {
+            initWines();
+            setupSearchListener();
+            renderAll();
+        });
+
+        function initWines() {
+            const raw = safeGetStorage(STORAGE_KEY);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        wines = parsed;
+                        return;
+                    }
+                } catch (e) {
+                    // Si données corrompues, réinitialiser proprement
+                }
+            }
+
+            // Bouteilles d'exemple au tout premier lancement
+            wines = [
+                {
+                    id: "sample-1",
+                    name: "Château Margaux",
+                    type: "Rouge",
+                    appellation: "Margaux - Grand Cru Classé",
+                    year: 2016,
+                    quantity: 2,
+                    advice: {
+                        source: "ai",
+                        pairing: "Carré d'agneau rôti aux herbes, filet de bœuf en croûte, gibier noble ou vieux Comté affiné.",
+                        whenToDrink: "2026 - 2045 (Début d'apogée)",
+                        aging: "20 à 30 ans",
+                        price: "650 € - 820 €"
+                    }
+                },
+                {
+                    id: "sample-2",
+                    name: "Champagne Bollinger Special Cuvée",
+                    type: "Champagne",
+                    appellation: "Champagne Brut",
+                    year: null,
+                    quantity: 3,
+                    advice: {
+                        source: "ai",
+                        pairing: "Apéritif de caractère, Saint-Jacques poêlées, jambon ibérique Bellota, volaille rôtie ou vieux Parmesan.",
+                        whenToDrink: "2026 - 2029 (Prêt à déguster)",
+                        aging: "3 à 5 ans après achat",
+                        price: "55 € - 68 €"
+                    }
+                },
+                {
+                    id: "sample-3",
+                    name: "Chablis Premier Cru Montmains",
+                    type: "Blanc",
+                    appellation: "Bourgogne - Chablis 1er Cru",
+                    year: 2021,
+                    quantity: 4,
+                    advice: {
+                        source: "manual",
+                        pairing: "Huîtres fines de claire, brochet au beurre blanc, escargots de Bourgogne ou fromage de chèvre frais.",
+                        whenToDrink: "2025 - 2030",
+                        aging: "6 à 9 ans",
+                        price: "38 €"
+                    }
+                }
+            ];
+            saveWines();
+        }
+
+        function saveWines() {
+            safeSetStorage(STORAGE_KEY, JSON.stringify(wines));
+        }
+
+        // ==========================================
+        // RECHERCHE & FILTRES
+        // ==========================================
+        function setupSearchListener() {
+            const input = document.getElementById("search-input");
+            const clearBtn = document.getElementById("clear-search-btn");
+            if (!input) return;
+
+            input.addEventListener("input", (e) => {
+                searchQuery = e.target.value.trim().toLowerCase();
+                if (clearBtn) {
+                    clearBtn.classList.toggle("hidden", searchQuery.length === 0);
+                }
+                renderWineList();
+            });
+        }
+
+        function clearSearch() {
+            const input = document.getElementById("search-input");
+            const clearBtn = document.getElementById("clear-search-btn");
+            if (input) input.value = "";
+            if (clearBtn) clearBtn.classList.add("hidden");
+            searchQuery = "";
+            renderWineList();
+        }
+
+        function setFilter(filterName) {
+            currentFilter = filterName;
+            document.querySelectorAll(".filter-chip").forEach(btn => {
+                const isSelected = btn.getAttribute("data-filter") === filterName;
+                if (isSelected) {
+                    btn.className = "filter-chip bg-wine-900 text-white px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-2xs transition-all flex items-center gap-1.5";
+                } else {
+                    btn.className = "filter-chip bg-white text-stone-600 border border-cream-200 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5";
+                }
+            });
+            renderWineList();
+        }
+
+        // ==========================================
+        // RENDU DE LA LISTE PRINCIPALE
+        // ==========================================
+        function renderAll() {
+            updateTotalCount();
+            renderWineList();
+        }
+
+        function updateTotalCount() {
+            const total = wines.reduce((acc, w) => acc + (Number(w.quantity) || 0), 0);
+            const el = document.getElementById("header-total-count");
+            if (el) el.textContent = total;
+        }
+
+        function getTypeBadgeClasses(type) {
+            switch (type) {
+                case "Rouge": return "bg-red-100 text-red-900 border border-red-200";
+                case "Blanc": return "bg-amber-50 text-amber-900 border border-amber-200";
+                case "Rosé": return "bg-rose-100 text-rose-900 border border-rose-200";
+                case "Champagne": return "bg-yellow-100 text-yellow-900 border border-yellow-300";
+                default: return "bg-orange-100 text-orange-900 border border-orange-200";
+            }
+        }
+
+        function renderWineList() {
+            const listEl = document.getElementById("wine-list");
+            const emptyEl = document.getElementById("empty-state");
+            if (!listEl || !emptyEl) return;
+
+            const filtered = wines.filter(w => {
+                const matchType = currentFilter === "Toutes" || w.type === currentFilter;
+                const yearSearch = w.year ? String(w.year) : "non millesime non millésimé nm";
+                const matchText = !searchQuery ||
+                    (w.name && w.name.toLowerCase().includes(searchQuery)) ||
+                    (w.appellation && w.appellation.toLowerCase().includes(searchQuery)) ||
+                    yearSearch.includes(searchQuery);
+                return matchType && matchText;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = "";
+                emptyEl.classList.remove("hidden");
+                return;
+            }
+
+            emptyEl.classList.add("hidden");
+            listEl.innerHTML = filtered.map(wine => {
+                const badgeClass = getTypeBadgeClasses(wine.type);
+                const yearHtml = wine.year
+                    ? `<span class="text-xs font-bold text-wine-900">${escapeHTML(String(wine.year))}</span>`
+                    : `<span class="text-[11px] font-semibold text-stone-600 bg-cream-100 border border-cream-200 px-1.5 py-0.5 rounded-md">Non millésimé</span>`;
+
+                const hasAdvice = Boolean(wine.advice);
+                const sourceChip = hasAdvice
+                    ? (wine.advice.source === "manual"
+                        ? `<span class="text-[10px] font-semibold text-wine-900 bg-wine-50 border border-wine-200 px-1.5 py-0.5 rounded-md">✍️ Notes</span>`
+                        : `<span class="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">✨ IA</span>`)
+                    : "";
+
+                const whenLine = hasAdvice && wine.advice.whenToDrink
+                    ? `<p class="text-[11px] text-wine-800 font-medium mt-1.5 truncate">📅 Boire : ${escapeHTML(wine.advice.whenToDrink)}</p>`
+                    : "";
+
+                return `
+                <div onclick="openDetailModal('${wine.id}')" class="bg-white rounded-2xl p-4 border border-cream-200 shadow-2xs hover:border-wine-300 active:bg-cream-50 transition-all cursor-pointer flex items-center justify-between gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${badgeClass}">${escapeHTML(wine.type)}</span>
+                            ${yearHtml}
+                            ${sourceChip}
+                        </div>
+                        <h3 class="font-serif font-bold text-stone-900 text-base truncate">${escapeHTML(wine.name)}</h3>
+                        <p class="text-xs text-stone-500 truncate mt-0.5">${wine.appellation ? escapeHTML(wine.appellation) : "Appellation non précisée"}</p>
+                        ${whenLine}
+                    </div>
+
+                    <!-- Contrôle quantité direct -->
+                    <div onclick="event.stopPropagation()" class="flex flex-col items-center bg-cream-50 border border-cream-200 rounded-xl p-1 gap-1 shrink-0">
+                        <button type="button" onclick="quickChangeQty('${wine.id}', 1)" class="w-7 h-7 rounded-lg bg-white hover:bg-wine-900 hover:text-white text-stone-700 flex items-center justify-center font-bold shadow-2xs transition-colors">+</button>
+                        <span class="text-xs font-bold text-wine-900 py-0.5">${wine.quantity}</span>
+                        <button type="button" onclick="quickChangeQty('${wine.id}', -1)" class="w-7 h-7 rounded-lg bg-white hover:bg-stone-200 text-stone-600 flex items-center justify-center font-bold shadow-2xs transition-colors">-</button>
+                    </div>
+                </div>
+                `;
+            }).join("");
+        }
+
+        function quickChangeQty(id, delta) {
+            const wine = wines.find(w => w.id === id);
+            if (!wine) return;
+            const next = (Number(wine.quantity) || 0) + delta;
+            if (next < 0) return;
+            wine.quantity = next;
+            saveWines();
+            renderAll();
+        }
+
+        // ==========================================
+        // MODALE D'AJOUT DE BOUTEILLE (100% FIABLE)
+        // ==========================================
+        function openAddModal() {
+            resetAddForm();
+            const modal = document.getElementById("add-modal");
+            if (modal) modal.classList.remove("hidden");
+        }
+
+        function closeAddModal() {
+            const modal = document.getElementById("add-modal");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function resetAddForm() {
+            const form = document.getElementById("add-wine-form");
+            if (form) form.reset();
+            selectAddType("Rouge");
+            addQty = 1;
+            const qtyEl = document.getElementById("add-qty-display");
+            if (qtyEl) qtyEl.textContent = "1";
+            toggleAddManualSection(false);
+        }
+
+        function selectAddType(type) {
+            const hiddenInput = document.getElementById("add-type");
+            if (hiddenInput) hiddenInput.value = type;
+
+            document.querySelectorAll(".add-type-btn").forEach(btn => {
+                const isSelected = btn.getAttribute("data-type") === type;
+                if (isSelected) {
+                    btn.className = "add-type-btn bg-wine-900 text-white border border-wine-900 py-2.5 px-2 rounded-xl text-xs font-semibold text-center transition-all shadow-2xs";
+                } else {
+                    btn.className = "add-type-btn bg-cream-50 text-stone-700 border border-cream-200 py-2.5 px-2 rounded-xl text-xs font-medium text-center transition-all";
+                }
+            });
+        }
+
+        function adjustAddQty(delta) {
+            addQty = Math.max(1, addQty + delta);
+            const qtyEl = document.getElementById("add-qty-display");
+            if (qtyEl) qtyEl.textContent = String(addQty);
+        }
+
+        function toggleAddManualSection(forceState = null) {
+            const fields = document.getElementById("add-manual-fields");
+            const chevron = document.getElementById("add-manual-chevron");
+            if (!fields || !chevron) return;
+
+            const isHidden = fields.classList.contains("hidden");
+            const shouldOpen = forceState !== null ? forceState : isHidden;
+            fields.classList.toggle("hidden", !shouldOpen);
+            chevron.style.transform = shouldOpen ? "rotate(180deg)" : "rotate(0deg)";
+        }
+
+        // Fonction principale d'ajout déclenchée par clic direct (aucun blocage submit)
+        function handleAddBottle() {
+            try {
+                const nameInput = document.getElementById("add-name");
+                const typeInput = document.getElementById("add-type");
+                const appInput = document.getElementById("add-appellation");
+                const yearInput = document.getElementById("add-year");
+
+                const name = nameInput ? nameInput.value.trim() : "";
+                if (!name) {
+                    showToast("Indique le nom de la bouteille !", "warning");
+                    if (nameInput) nameInput.focus();
+                    return;
+                }
+
+                const type = typeInput && typeInput.value ? typeInput.value : "Rouge";
+                const appellation = appInput ? appInput.value.trim() : "";
+
+                // Année 100% facultative (null si vide ou invalide)
+                let year = null;
+                if (yearInput && yearInput.value.trim() !== "") {
+                    const digits = yearInput.value.replace(/\D/g, "");
+                    if (digits.length === 4) {
+                        year = parseInt(digits, 10);
+                    } else if (digits.length > 0) {
+                        year = parseInt(digits, 10);
+                    }
+                }
+
+                // Vérifier si l'utilisateur a saisi des conseils manuels dès l'ajout
+                const manPairing = (document.getElementById("add-manual-pairing")?.value || "").trim();
+                const manWhen = (document.getElementById("add-manual-when")?.value || "").trim();
+                const manAging = (document.getElementById("add-manual-aging")?.value || "").trim();
+                const manPrice = (document.getElementById("add-manual-price")?.value || "").trim();
+
+                let advice = null;
+                if (manPairing || manWhen || manAging || manPrice) {
+                    advice = {
+                        source: "manual",
+                        pairing: manPairing || "Non renseigné",
+                        whenToDrink: manWhen || "Non renseigné",
+                        aging: manAging || "Non renseigné",
+                        price: manPrice || "Non renseigné"
+                    };
+                }
+
+                const newBottle = {
+                    id: "wine-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+                    name: name,
+                    type: type,
+                    appellation: appellation,
+                    year: year,
+                    quantity: addQty,
+                    advice: advice
+                };
+
+                wines.unshift(newBottle);
+                saveWines();
+
+                // Si un filtre masquait ce type, revenir sur "Toutes" pour que l'utilisateur voie immédiatement sa bouteille
+                if (currentFilter !== "Toutes" && currentFilter !== type) {
+                    setFilter("Toutes");
+                } else {
+                    renderAll();
+                }
+
+                closeAddModal();
+                showToast("Bouteille ajoutée à votre cave !", "success");
+            } catch (err) {
+                console.error("Erreur lors de l'ajout:", err);
+                showToast("Une erreur est survenue, réessaie.", "error");
+            }
+        }
+
+        // ==========================================
+        // MODALE FICHE DÉTAILLÉE, ÉDITION & SOMMELIER IA
+        // ==========================================
+        function openDetailModal(id) {
+            const wine = wines.find(w => w.id === id);
+            if (!wine) return;
+
+            activeWineId = id;
+            toggleEditBottleInfo(false);
+
+            const badge = document.getElementById("detail-type-badge");
+            badge.className = `text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full ${getTypeBadgeClasses(wine.type)}`;
+            badge.textContent = wine.type;
+
+            document.getElementById("detail-year-badge").textContent = wine.year ? String(wine.year) : "Non millésimé (NM)";
+            document.getElementById("detail-name").textContent = wine.name;
+            document.getElementById("detail-appellation").textContent = wine.appellation || "Appellation non précisée";
+            document.getElementById("detail-qty").textContent = String(wine.quantity);
+
+            // Réinitialiser bouton suppression
+            const delBtn = document.getElementById("btn-delete-bottle");
+            if (delBtn) {
+                delBtn.dataset.confirm = "false";
+                delBtn.textContent = "🗑️ Supprimer ce vin";
+            }
+
+            renderAdviceSection(wine);
+            document.getElementById("detail-modal").classList.remove("hidden");
+        }
+
+        function closeDetailModal() {
+            activeWineId = null;
+            document.getElementById("detail-modal").classList.add("hidden");
+        }
+
+        function changeDetailQty(delta) {
+            const wine = wines.find(w => w.id === activeWineId);
+            if (!wine) return;
+            const next = (Number(wine.quantity) || 0) + delta;
+            if (next < 0) return;
+            wine.quantity = next;
+            saveWines();
+            document.getElementById("detail-qty").textContent = String(wine.quantity);
+            renderAll();
+        }
+
+        // Édition des informations de base (Nom, Type, Année, Appellation)
+        function toggleEditBottleInfo(showEdit) {
+            const viewEl = document.getElementById("detail-header-view");
+            const editEl = document.getElementById("detail-header-edit");
+            if (!viewEl || !editEl) return;
+
+            if (showEdit && activeWineId) {
+                const wine = wines.find(w => w.id === activeWineId);
+                if (wine) {
+                    document.getElementById("edit-info-name").value = wine.name;
+                    document.getElementById("edit-info-type").value = wine.type;
+                    document.getElementById("edit-info-year").value = wine.year ? String(wine.year) : "";
+                    document.getElementById("edit-info-appellation").value = wine.appellation || "";
+                }
+            }
+
+            viewEl.classList.toggle("hidden", showEdit);
+            editEl.classList.toggle("hidden", !showEdit);
+        }
+
+        function saveEditedBottleInfo() {
+            const wine = wines.find(w => w.id === activeWineId);
+            if (!wine) return;
+
+            const newName = document.getElementById("edit-info-name").value.trim();
+            if (!newName) {
+                showToast("Le nom ne peut pas être vide.", "warning");
+                return;
+            }
+
+            const rawYear = document.getElementById("edit-info-year").value.replace(/\D/g, "");
+            wine.name = newName;
+            wine.type = document.getElementById("edit-info-type").value;
+            wine.year = rawYear ? parseInt(rawYear, 10) : null;
+            wine.appellation = document.getElementById("edit-info-appellation").value.trim();
+
+            saveWines();
+            renderAll();
+            openDetailModal(wine.id);
+            showToast("Informations mises à jour !", "success");
+        }
+
+        // Affichage des 4 conseils (Lecture)
+        function renderAdviceSection(wine) {
+            const container = document.getElementById("detail-advice-container");
+            const sourceBadge = document.getElementById("detail-source-badge");
+            if (!container || !sourceBadge) return;
+
+            if (!wine.advice) {
+                sourceBadge.classList.add("hidden");
+                container.innerHTML = `
+                    <div class="bg-cream-50 border border-dashed border-cream-200 rounded-xl p-5 text-center space-y-3">
+                        <p class="text-xs text-stone-500">Aucun conseil enregistré pour cette bouteille.</p>
+                        <div class="flex flex-wrap items-center justify-center gap-2">
+                            <button type="button" onclick="runSommelierAI()" class="bg-wine-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-2xs active:scale-95">
+                                ✨ Demander au Sommelier IA
+                            </button>
+                            <button type="button" onclick="openAdviceEditor()" class="bg-white text-wine-900 border border-wine-200 text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95">
+                                ✍️ Écrire mes notes
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const a = wine.advice;
+            sourceBadge.classList.remove("hidden");
+            if (a.source === "manual") {
+                sourceBadge.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-wine-100 text-wine-900 border border-wine-200";
+                sourceBadge.textContent = "Notes personnelles";
+            } else {
+                sourceBadge.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300";
+                sourceBadge.textContent = "Sommelier IA";
+            }
+
+            container.innerHTML = `
+                <div class="bg-wine-50/70 border border-wine-100 rounded-xl p-3.5 space-y-2.5">
+                    <div class="bg-white p-3 rounded-lg border border-wine-100">
+                        <div class="text-[11px] font-bold uppercase text-stone-400 mb-1">🍽️ Avec quoi le boire</div>
+                        <p class="text-xs text-stone-800 leading-relaxed font-medium">${escapeHTML(a.pairing || "Non renseigné")}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div class="bg-white p-3 rounded-lg border border-wine-100">
+                            <div class="text-[11px] font-bold uppercase text-stone-400 mb-1">📅 Quand le boire</div>
+                            <p class="text-xs font-bold text-wine-900">${escapeHTML(a.whenToDrink || "Non renseigné")}</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border border-wine-100">
+                            <div class="text-[11px] font-bold uppercase text-stone-400 mb-1">⏳ Garde</div>
+                            <p class="text-xs font-semibold text-stone-800">${escapeHTML(a.aging || "Non renseigné")}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-3 rounded-lg border border-wine-100 flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase text-stone-400">💶 Prix moyen actuel</span>
+                        <span class="text-sm font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">${escapeHTML(a.price || "Non renseigné")}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Éditeur manuel des 4 rubriques
+        function openAdviceEditor() {
+            const wine = wines.find(w => w.id === activeWineId);
+            if (!wine) return;
+
+            const existing = wine.advice || { pairing: "", whenToDrink: "", aging: "", price: "" };
+            const container = document.getElementById("detail-advice-container");
+
+            container.innerHTML = `
+                <div class="bg-cream-50 border border-wine-200 rounded-xl p-4 space-y-3 animate-fade-in">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-wine-900">✍️ Éditer mes conseils</span>
+                        <button type="button" onclick="renderAdviceSection(wines.find(w => w.id === '${wine.id}'))" class="text-xs text-stone-500 underline">Annuler</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">🍽️ Avec quoi le boire</label>
+                        <textarea id="edit-adv-pairing" rows="2" placeholder="Accords mets-vins..." class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2 text-xs">${escapeHTML(existing.pairing)}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">📅 Quand le boire</label>
+                            <input type="text" id="edit-adv-when" value="${escapeHTML(existing.whenToDrink)}" placeholder="Ex: 2026 - 2032" class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">⏳ Garde</label>
+                            <input type="text" id="edit-adv-aging" value="${escapeHTML(existing.aging)}" placeholder="Ex: 5 à 10 ans" class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2 text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-stone-600 uppercase mb-1">💶 Prix moyen actuel (€)</label>
+                        <input type="text" id="edit-adv-price" value="${escapeHTML(existing.price)}" placeholder="Ex: 32 €" class="w-full bg-white border border-cream-200 rounded-lg px-3 py-2 text-xs">
+                    </div>
+
+                    <button type="button" onclick="saveEditedAdvice()" class="w-full bg-wine-900 text-white text-xs font-bold py-3 rounded-lg shadow-2xs active:scale-95">
+                        Enregistrer mes conseils
+                    </button>
+                </div>
+            `;
+        }
+
+        function saveEditedAdvice() {
+            const wine = wines.find(w => w.id === activeWineId);
+            if (!wine) return;
+
+            const pairing = document.getElementById("edit-adv-pairing").value.trim();
+            const whenToDrink = document.getElementById("edit-adv-when").value.trim();
+            const aging = document.getElementById("edit-adv-aging").value.trim();
+            const price = document.getElementById("edit-adv-price").value.trim();
+
+            if (!pairing && !whenToDrink && !aging && !price) {
+                wine.advice = null;
+            } else {
+                wine.advice = {
+                    source: "manual",
+                    pairing: pairing || "Non renseigné",
+                    whenToDrink: whenToDrink || "Non renseigné",
+                    aging: aging || "Non renseigné",
+                    price: price || "Non renseigné"
+                };
+            }
+
+            saveWines();
+            renderAdviceSection(wine);
+            renderWineList();
+            showToast("Conseils enregistrés !", "success");
+        }
+
+        // ==========================================
+        // MOTEUR ŒNOLOGIQUE INTELLIGENT (SOMMELIER IA)
+        // ==========================================
+        function runSommelierAI() {
+            const wine = wines.find(w => w.id === activeWineId);
+            if (!wine) return;
+
+            const currentYear = 2026;
+            const query = `${wine.name} ${wine.appellation || ""}`.toLowerCase();
+            const type = wine.type;
+            const year = wine.year;
+
+            // Base de connaissances œnologiques par régions / appellations / cépages
+            const knowledgeBase = [
+                {
+                    keys: ["pauillac", "margaux", "saint-julien", "saint-estephe", "saint-estèphe", "pessac", "medoc", "médoc", "haut-medoc", "graves"],
+                    pairing: "Côte de bœuf grillée, carré d'agneau rôti, magret de canard aux figues ou fromages affinés (Comté, Saint-Nectaire).",
+                    agingMin: 12, agingMax: 22, price: "45 € - 120 €"
+                },
+                {
+                    keys: ["pomerol", "saint-emilion", "saint-émilion", "fronsac", "lalande"],
+                    pairing: "Filet mignon de veau aux morilles, entrecôte grillée, volaille rôtie truffée ou Brie de Meaux.",
+                    agingMin: 10, agingMax: 18, price: "40 € - 95 €"
+                },
+                {
+                    keys: ["bordeaux", "cotes de bourg", "blaye", "entre-deux-mers"],
+                    pairing: "Viandes rouges grillées, bavette à l'échalote, charcuterie artisanale ou plateau de fromages.",
+                    agingMin: 5, agingMax: 10, price: "14 € - 28 €"
+                },
+                {
+                    keys: ["gevrey", "pommard", "nuits-saint-georges", "vosne", "chambolle", "beaune", "volnay", "mercurey", "bourgogne", "pinot noir"],
+                    pairing: "Bœuf bourguignon, coq au vin, filet de canard rosé, champignons sautés ou Époisses.",
+                    agingMin: 8, agingMax: 16, price: "35 € - 90 €"
+                },
+                {
+                    keys: ["chablis", "meursault", "puligny", "chassagne", "pouilly-fuisse", "pouilly-fuissé", "saint-veran", "macon", "mâcon", "chardonnay"],
+                    pairing: "Huîtres, Saint-Jacques poêlées, poissons nobles en sauce, volaille à la crème ou fromage de chèvre.",
+                    agingMin: 5, agingMax: 10, price: "25 € - 65 €"
+                },
+                {
+                    keys: ["cote-rotie", "côte-rôtie", "hermitage", "crozes", "cornas", "saint-joseph", "syrah"],
+                    pairing: "Gibier à plumes, civet de sanglier, côte d'agneau grillée ou fromages de caractère.",
+                    agingMin: 8, agingMax: 15, price: "28 € - 75 €"
+                },
+                {
+                    keys: ["chateauneuf", "châteauneuf", "gigondas", "vacqueyras", "cotes du rhone", "côtes du rhône", "grenache"],
+                    pairing: "Daube provençale, gigot d'agneau aux herbes de Provence, ratatouille confite ou fromages affinés.",
+                    agingMin: 6, agingMax: 14, price: "16 € - 55 €"
+                },
+                {
+                    keys: ["sancerre", "pouilly-fume", "pouilly-fumé", "vouvray", "chinon", "saumur", "muscadet", "loire", "sauvignon", "chenin"],
+                    pairing: "Crottin de Chavignol, fruits de mer, poissons grillés, asperges blanches ou viandes blanches.",
+                    agingMin: 3, agingMax: 7, price: "15 € - 32 €"
+                },
+                {
+                    keys: ["alsace", "riesling", "gewurztraminer", "pinot gris", "cremant", "crémant"],
+                    pairing: "Choucroute garnie, cuisine asiatique épicée, poissons fumés, foie gras ou Munster.",
+                    agingMin: 4, agingMax: 10, price: "16 € - 35 €"
+                },
+                {
+                    keys: ["champagne", "brut", "blanc de blancs", "blanc de noirs", "dom perignon", "ruinart", "bollinger", "roederer", "taittinger", "veuve clicquot", "moet"],
+                    pairing: "Apéritif, huîtres, carpaccio de Saint-Jacques, gougères au Comté, volaille rôtie ou vieux Parmesan.",
+                    agingMin: 3, agingMax: 8, price: "38 € - 85 €"
+                },
+                {
+                    keys: ["provence", "bandol", "cotes de provence", "tavel"],
+                    pairing: "Cuisine méditerranéenne, bouillabaisse, grillades d'été, petits farcis et tapenade.",
+                    agingMin: 2, agingMax: 4, price: "14 € - 28 €"
+                },
+                {
+                    keys: ["beaujolais", "morgon", "moulin-a-vent", "fleurie", "brouilly", "gamay"],
+                    pairing: "Charcuterie lyonnaise, volaille rôtie, pot-au-feu, terrines maison ou Saint-Marcellin.",
+                    agingMin: 3, agingMax: 7, price: "14 € - 26 €"
+                },
+                {
+                    keys: ["sauternes", "monbazillac", "jurancon", "jurançon", "loupiac", "barsac", "liquoreux"],
+                    pairing: "Foie gras mi-cuit, Roquefort ou fromages persillés, tarte fine aux abricots ou poires pochées.",
+                    agingMin: 12, agingMax: 25, price: "28 € - 65 €"
+                }
+            ];
+
+            // Recherche correspondance
+            let matched = knowledgeBase.find(item => item.keys.some(k => query.includes(k)));
+
+            // Profils par défaut selon le type
+            if (!matched) {
+                const defaults = {
+                    "Rouge": {
+                        pairing: "Viandes rouges grillées ou mijotées, volaille rôtie, charcuterie fine et plateau de fromages affinés.",
+                        agingMin: 5, agingMax: 10, price: "18 € - 35 €"
+                    },
+                    "Blanc": {
+                        pairing: "Poissons grillés ou en sauce, fruits de mer, volaille à la crème, risotto ou fromage de chèvre.",
+                        agingMin: 3, agingMax: 6, price: "16 € - 30 €"
+                    },
+                    "Rosé": {
+                        pairing: "Salades estivales, grillades, cuisine méditerranéenne, tapas et tartes salées.",
+                        agingMin: 1, agingMax: 3, price: "12 € - 20 €"
+                    },
+                    "Champagne": {
+                        pairing: "Apéritif, crustacés, Saint-Jacques snackées, sushis ou volaille fermière.",
+                        agingMin: 3, agingMax: 6, price: "35 € - 65 €"
+                    },
+                    "Autre": {
+                        pairing: "Foie gras, fromages bleus, desserts aux fruits jaunes ou dégustation en digestif selon la cuvée.",
+                        agingMin: 8, agingMax: 18, price: "22 € - 45 €"
+                    }
+                };
+                matched = defaults[type] || defaults["Rouge"];
+            }
+
+            // Calcul intelligent de la fenêtre de consommation selon l'année ou le statut Non millésimé
+            let whenToDrink = "";
+            let agingLabel = "";
+
+            if (!year) {
+                // Cas Non millésimé (ex: Champagne Brut sans année)
+                whenToDrink = `${currentYear} - ${currentYear + 3} (Prêt à déguster)`;
+                agingLabel = type === "Champagne" ? "2 à 4 ans après achat" : "1 à 3 ans";
+            } else {
+                const startDrink = Math.max(year + 2, currentYear);
+                const endDrink = Math.max(year + matched.agingMax, currentYear + 1);
+                const status = currentYear >= year + Math.floor(matched.agingMin * 0.6) && currentYear <= year + matched.agingMax
+                    ? " (À son apogée)"
+                    : (currentYear < year + Math.floor(matched.agingMin * 0.6) ? " (Encore jeune)" : "");
+                whenToDrink = `${startDrink} - ${endDrink}${status}`;
+                agingLabel = `${matched.agingMin} à ${matched.agingMax} ans`;
+            }
+
+            wine.advice = {
+                source: "ai",
+                pairing: matched.pairing,
+                whenToDrink: whenToDrink,
+                aging: agingLabel,
+                price: matched.price
+            };
+
+            saveWines();
+            renderAdviceSection(wine);
+            renderWineList();
+            showToast("Analyse du Sommelier IA générée !", "success");
+        }
+
+        // ==========================================
+        // SUPPRESSION & SAUVEGARDE JSON
+        // ==========================================
+        function handleDeleteBottle() {
+            const btn = document.getElementById("btn-delete-bottle");
+            if (!btn || !activeWineId) return;
+
+            if (btn.dataset.confirm !== "true") {
+                btn.dataset.confirm = "true";
+                btn.textContent = "⚠️ Cliquer à nouveau pour confirmer";
+                return;
+            }
+
+            wines = wines.filter(w => w.id !== activeWineId);
+            saveWines();
+            closeDetailModal();
+            renderAll();
+            showToast("Bouteille supprimée.", "info");
+        }
+
+        function openBackupModal() {
+            document.getElementById("backup-modal").classList.remove("hidden");
+        }
+
+        function closeBackupModal() {
+            document.getElementById("backup-modal").classList.add("hidden");
+        }
+
+        function exportCellarJSON() {
+            const jsonStr = JSON.stringify(wines, null, 2);
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `ma-cave-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Fichier de sauvegarde téléchargé !", "success");
+        }
+
+        function importCellarJSON(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        wines = data;
+                        saveWines();
+                        renderAll();
+                        closeBackupModal();
+                        showToast(`${wines.length} références restaurées !`, "success");
+                    } else {
+                        showToast("Fichier invalide.", "error");
+                    }
+                } catch (err) {
+                    showToast("Impossible de lire ce fichier.", "error");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = "";
+        }
+
+        // ==========================================
+        // ASSISTANT "QUEL VIN POUR MON PLAT ?" (METS -> CAVE)
+        // ==========================================
+        let lastDishQuery = "";
+
+        function openDishModal() {
+            const modal = document.getElementById("dish-modal");
+            if (modal) modal.classList.remove("hidden");
+            const input = document.getElementById("dish-input");
+            if (input && input.value.trim()) {
+                findWinesForDish();
+            }
+        }
+
+        function closeDishModal() {
+            const modal = document.getElementById("dish-modal");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        function selectDishPreset(presetLabel) {
+            const input = document.getElementById("dish-input");
+            if (input) input.value = presetLabel;
+
+            document.querySelectorAll(".dish-preset-btn").forEach(btn => {
+                const isSame = btn.textContent.includes(presetLabel);
+                btn.className = isSame
+                    ? "dish-preset-btn bg-wine-900 text-white border border-wine-900 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shadow-2xs"
+                    : "dish-preset-btn bg-cream-50 hover:bg-wine-50 text-stone-700 border border-cream-200 px-3 py-1.5 rounded-full text-xs font-medium transition-all";
+            });
+
+            findWinesForDish();
+        }
+
+        function normalizeText(str) {
+            return (str || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function findWinesForDish() {
+            const input = document.getElementById("dish-input");
+            const container = document.getElementById("dish-results-container");
+            if (!input || !container) return;
+
+            const rawDish = input.value.trim();
+            if (!rawDish) {
+                showToast("Indique d'abord un plat ou choisis une catégorie !", "warning");
+                input.focus();
+                return;
+            }
+            lastDishQuery = rawDish;
+
+            // 1. Filtrer uniquement les bouteilles actuellement en stock (quantité > 0)
+            const inStock = wines.filter(w => (Number(w.quantity) || 0) > 0);
+            if (inStock.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center space-y-2">
+                        <p class="font-serif font-bold text-wine-900 text-base">Votre cave est actuellement vide</p>
+                        <p class="text-xs text-stone-600">Toutes vos bouteilles ont un stock à 0. Ajoutez une bouteille pour obtenir des suggestions d'accords.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const normDish = normalizeText(rawDish);
+            const currentYear = 2026;
+
+            // 2. Base de profils culinaires & règles d'accords œnologiques
+            const dishProfiles = [
+                {
+                    id: "raclette_fondue",
+                    label: "Fromages fondus / Raclette / Tartiflette",
+                    keywords: ["raclette", "fondue", "tartiflette", "mont d'or", "mont dor", "reblochon", "aligot", "fromages / raclette"],
+                    preferredTypes: ["Blanc", "Champagne", "Rouge"],
+                    typeWeights: { Blanc: 48, Champagne: 34, Rouge: 20, Rosé: 8, Autre: 5 },
+                    regionBonus: ["savoie", "apremont", "chignin", "jura", "arbois", "alsace", "riesling", "pinot gris", "chablis", "bourgogne", "beaujolais", "gamay", "pinot noir", "loire", "sancerre"],
+                    regionMalus: ["pauillac", "margaux", "saint-julien", "saint-estephe", "medoc", "cahors", "madiran"],
+                    reasonTemplate: (w) => w.type === "Blanc"
+                        ? "Sa fraîcheur et sa vivacité trancient le gras du fromage fondu sans alourdir le palais."
+                        : (w.type === "Champagne"
+                            ? "Ses bulles fines et son acidité nettoient merveilleusement le palais entre chaque bouchée de fromage."
+                            : "Ses tanins souples et son fruit croquant accompagnent la charcuterie sans durcir au contact du fromage.")
+                },
+                {
+                    id: "plateau_fromages",
+                    label: "Plateau de fromages affinés",
+                    keywords: ["fromage", "comte", "brie", "camembert", "roquefort", "chevre", "munster", "epoisses"],
+                    preferredTypes: ["Blanc", "Rouge", "Autre", "Champagne"],
+                    typeWeights: { Blanc: 44, Rouge: 36, Autre: 35, Champagne: 28, Rosé: 5 },
+                    regionBonus: ["jura", "alsace", "gewurztraminer", "sancerre", "chablis", "bourgogne", "bordeaux", "pomerol", "saint-emilion", "sauternes", "rhone"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => w.type === "Blanc"
+                        ? "Les vins blancs de caractère subliment les pâtes pressées (Comté) et les fromages de chèvre bien mieux que les tanins."
+                        : (w.type === "Autre"
+                            ? "La richesse aromatique et la douceur équilibrent à merveille le sel des fromages persillés (Roquefort, Bleu)."
+                            : "Ses arômes tertiaires et sa structure répondent avec élégance aux fromages affinés.")
+                },
+                {
+                    id: "huitres_crustaces",
+                    label: "Huîtres, coquillages & fruits de mer",
+                    keywords: ["huitre", "fruits de mer", "plateau de fruits", "bulot", "crevette", "langoustine", "homard", "crabe", "saint-jacques", "saint jacques", "coquille", "moule", "palourde"],
+                    preferredTypes: ["Blanc", "Champagne"],
+                    typeWeights: { Blanc: 52, Champagne: 48, Rosé: 14, Rouge: -30, Autre: -20 },
+                    regionBonus: ["chablis", "muscadet", "sancerre", "pouilly-fume", "entre-deux-mers", "picpoul", "riesling", "blanc de blancs", "champagne", "champagne brut", "sauvignon"],
+                    regionMalus: ["bordeaux", "medoc", "pauillac", "cotes du rhone", "syrah"],
+                    reasonTemplate: (w) => w.type === "Champagne"
+                        ? "La minéralité crayeuse et l'effervescence vive exaltent le côté iodé des coquillages."
+                        : "Sa tension minérale et ses notes d'agrumes épousent parfaitement la fraîcheur marine."
+                },
+                {
+                    id: "poisson",
+                    label: "Poisson grillé, en sauce ou sushi",
+                    keywords: ["poisson", "saumon", "cabillaud", "bar", "dorade", "daurade", "sole", "turbot", "thon", "truite", "sushi", "sashimi", "maki", "ceviche", "tartare de poisson", "bouillabaisse", "poisson / fruits de mer"],
+                    preferredTypes: ["Blanc", "Champagne", "Rosé"],
+                    typeWeights: { Blanc: 50, Champagne: 38, Rosé: 26, Rouge: -15, Autre: -10 },
+                    regionBonus: ["chablis", "meursault", "puligny", "bourgogne", "chardonnay", "sancerre", "loire", "riesling", "alsace", "provence", "bandol", "champagne"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => w.type === "Blanc"
+                        ? "Son équilibre entre rondeur et fraîcheur accompagne la chair délicate du poisson sans la masquer."
+                        : (w.type === "Rosé"
+                            ? "Sec et aromatique, il s'accorde idéalement avec les poissons méditerranéens grillés."
+                            : "Sa finesse et ses bulles délicates respectent la pureté du poisson.")
+                },
+                {
+                    id: "viande_rouge_gibier",
+                    label: "Viande rouge, grillade ou gibier",
+                    keywords: ["viande rouge", "boeuf", "steak", "entrecote", "cote de boeuf", "filet de boeuf", "bourguignon", "bavette", "tartare", "agneau", "gigot", "carre d'agneau", "magret", "canard", "confit", "gibier", "sanglier", "chevreuil", "biche", "daube", "barbecue", "bbq", "burger", "viande rouge / gibier"],
+                    preferredTypes: ["Rouge"],
+                    typeWeights: { Rouge: 55, Rosé: 10, Blanc: -15, Champagne: -10, Autre: -20 },
+                    regionBonus: ["pauillac", "margaux", "saint-julien", "saint-estephe", "pessac", "medoc", "pomerol", "saint-emilion", "bordeaux", "gevrey", "pommard", "nuits-saint-georges", "bourgogne", "cote-rotie", "hermitage", "chateauneuf", "gigondas", "cotes du rhone", "cahors", "madiran", "chinon"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => "Ses tanins structurés et sa profondeur aromatique enrobent les protéines de la viande et subliment les sucs de cuisson."
+                },
+                {
+                    id: "volaille_blanche",
+                    label: "Volaille, veau ou viande blanche",
+                    keywords: ["volaille", "poulet", "dinde", "pintade", "chapon", "caille", "pigeon", "veau", "blanquette", "escalope", "filet mignon", "porc", "roti de porc", "lapin", "volaille / viande blanche"],
+                    preferredTypes: ["Blanc", "Rouge", "Champagne"],
+                    typeWeights: { Blanc: 44, Rouge: 42, Champagne: 28, Rosé: 18, Autre: 5 },
+                    regionBonus: ["bourgogne", "meursault", "chablis", "beaune", "volnay", "pinot noir", "chardonnay", "pomerol", "saint-emilion", "loire", "vouvray", "champagne"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => w.type === "Blanc"
+                        ? "Sa rondeur beurrée et son amplitude répondent merveilleusement aux sauces crémeuses et aux chairs tendres."
+                        : "Un rouge élégant aux tanins fins qui respecte la délicatesse de la viande blanche sans l'écraser."
+                },
+                {
+                    id: "champignons_truffe_vege",
+                    label: "Champignons, truffe, pâtes ou risotto",
+                    keywords: ["champignon", "cepe", "morille", "girolle", "truffe", "risotto", "pates", "pasta", "lasagne", "gratin", "legume", "vegetarien", "courge", "potimarron", "vegetarien / champignons"],
+                    preferredTypes: ["Rouge", "Blanc", "Champagne"],
+                    typeWeights: { Rouge: 45, Blanc: 42, Champagne: 25, Rosé: 12, Autre: 5 },
+                    regionBonus: ["bourgogne", "gevrey", "pommard", "beaune", "pinot noir", "pomerol", "saint-emilion", "meursault", "chardonnay", "jura", "rhone", "champagne"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => w.type === "Rouge"
+                        ? "Ses notes de sous-bois, d'épices douces et de fruits rouges résonnent naturellement avec les saveurs terriennes des champignons."
+                        : "Sa texture ample et veloutée enveloppe l'onctuosité du risotto ou des pâtes."
+                },
+                {
+                    id: "epice_exotique",
+                    label: "Plats épicés, asiatiques ou exotiques",
+                    keywords: ["epice", "curry", "thai", "indien", "asiatique", "wok", "nouille", "canard laque", "tajine", "couscous", "mexicain", "colombo", "gingembre", "plats epices / exotiques"],
+                    preferredTypes: ["Blanc", "Rosé", "Champagne", "Rouge"],
+                    typeWeights: { Blanc: 48, Rosé: 36, Champagne: 30, Rouge: 22, Autre: 25 },
+                    regionBonus: ["alsace", "gewurztraminer", "riesling", "pinot gris", "vouvray", "loire", "provence", "tavel", "cotes du rhone", "grenache"],
+                    regionMalus: ["pauillac", "medoc", "cahors"],
+                    reasonTemplate: (w) => w.type === "Blanc"
+                        ? "Son fruité aromatique et sa fraîcheur apaisent le feu des épices tout en prolongeant leurs arômes."
+                        : "Son profil gourmand et peu tannique évite toute amertume au contact des épices."
+                },
+                {
+                    id: "aperitif_festif",
+                    label: "Apéritif, tapas & moments festifs",
+                    keywords: ["aperitif", "apero", "tapas", "charcuterie", "gougere", "toast", "amuse", "fete", "anniversaire", "noel", "reveillon", "aperitif / festif"],
+                    preferredTypes: ["Champagne", "Blanc", "Rosé", "Rouge"],
+                    typeWeights: { Champagne: 55, Blanc: 38, Rosé: 35, Rouge: 24, Autre: 15 },
+                    regionBonus: ["champagne", "cremant", "brut", "blanc de blancs", "provence", "beaujolais", "sancerre", "chablis"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => w.type === "Champagne"
+                        ? "L'incontournable de l'apéritif : ses bulles fines ouvrent l'appétit et mettent les papilles en éveil."
+                        : "Frais, convivial et expressif, parfait pour accompagner les bouchées apéritives."
+                },
+                {
+                    id: "foie_gras_dessert",
+                    label: "Foie gras, dessert ou chocolat",
+                    keywords: ["foie gras", "dessert", "tarte", "gateau", "chocolat", "fondant", "fruit", "poire", "pomme", "abricot", "creme brulee", "patisserie", "dessert / chocolat"],
+                    preferredTypes: ["Autre", "Champagne", "Rouge"],
+                    typeWeights: { Autre: 55, Champagne: 36, Rouge: 24, Blanc: 18, Rosé: 5 },
+                    regionBonus: ["sauternes", "monbazillac", "jurancon", "loupiac", "barsac", "alsace", "gewurztraminer", "champagne", "banyuls", "maury", "porto"],
+                    regionMalus: [],
+                    reasonTemplate: (w) => w.type === "Autre"
+                        ? "Son équilibre liqueur / fraîcheur crée un accord d'harmonie somptueux avec le foie gras ou les desserts fruités."
+                        : (w.type === "Champagne"
+                            ? "La vivacité des bulles apporte de la légèreté en fin de repas sans saturer le palais."
+                            : "Un rouge gourmand aux notes de cacao et de fruits noirs qui répond à l'intensité du chocolat.")
+                }
+            ];
+
+            // Trouver le profil culinaire correspondant au texte saisi
+            const matchedProfile = dishProfiles.find(p => p.keywords.some(k => normDish.includes(normalizeText(k))));
+
+            // Extraire les mots significatifs saisis par l'utilisateur (>= 4 lettres) pour matcher ses notes personnelles
+            const dishTokens = normDish.split(/[^a-z0-9]+/).filter(t => t.length >= 4);
+
+            // 3. Calculer un score détaillé pour chaque bouteille en stock
+            const scoredWines = inStock.map(wine => {
+                let score = 0;
+                const reasons = [];
+                const wineText = normalizeText(`${wine.name} ${wine.appellation || ""}`);
+                const pairingText = wine.advice && wine.advice.pairing ? normalizeText(wine.advice.pairing) : "";
+
+                // A. Correspondance directe dans les conseils enregistrés sur la bouteille (Notes personnelles ou IA)
+                const directTokenMatch = dishTokens.find(tok => pairingText.includes(tok));
+                if (directTokenMatch) {
+                    score += 45;
+                    const labelSource = wine.advice.source === "manual" ? "vos notes personnelles" : "sa fiche dégustation";
+                    reasons.push(`Accord mentionné directement dans ${labelSource} (« ${wine.advice.pairing} »).`);
+                }
+
+                // B. Score selon le profil culinaire reconnu
+                if (matchedProfile) {
+                    const typeScore = matchedProfile.typeWeights[wine.type] ?? 10;
+                    score += typeScore;
+
+                    if (matchedProfile.regionBonus.some(r => wineText.includes(normalizeText(r)))) {
+                        score += 22;
+                    }
+                    if (matchedProfile.regionMalus.some(r => wineText.includes(normalizeText(r)))) {
+                        score -= 25;
+                    }
+
+                    if (typeScore >= 25 && reasons.length === 0) {
+                        reasons.push(matchedProfile.reasonTemplate(wine));
+                    }
+                } else {
+                    // Fallback si plat très spécifique non listé
+                    if (wine.type === "Rouge" || wine.type === "Blanc") score += 25;
+                    if (wine.type === "Champagne") score += 22;
+                    if (reasons.length === 0) {
+                        reasons.push(`Un ${wine.type.toLowerCase()} polyvalent de votre cave capable d'accompagner ce plat avec équilibre.`);
+                    }
+                }
+
+                // C. Bonus de maturité / apogée en 2026
+                let maturityNote = "";
+                if (!wine.year) {
+                    score += 6;
+                    maturityNote = "Prêt à boire (Non millésimé)";
+                } else {
+                    const age = currentYear - Number(wine.year);
+                    if (wine.type === "Rouge" && age >= 4 && age <= 15) {
+                        score += 10;
+                        maturityNote = `À son apogée en ${currentYear}`;
+                    } else if ((wine.type === "Blanc" || wine.type === "Champagne") && age >= 1 && age <= 7) {
+                        score += 10;
+                        maturityNote = `Fraîcheur idéale en ${currentYear}`;
+                    } else if (wine.type === "Rosé" && age <= 2) {
+                        score += 10;
+                        maturityNote = "À boire sur sa jeunesse";
+                    } else if (age < 2 && wine.type === "Rouge") {
+                        score -= 4;
+                        maturityNote = "Encore jeune (carafage conseillé)";
+                    }
+                }
+
+                if (reasons.length === 0) {
+                    reasons.push(`Une alternative intéressante parmi vos bouteilles disponibles en cave.`);
+                }
+
+                return {
+                    wine,
+                    score,
+                    reason: reasons[0],
+                    maturityNote
+                };
+            });
+
+            // Trier par score décroissant
+            scoredWines.sort((a, b) => b.score - a.score);
+
+            const bestScore = scoredWines[0].score;
+            const hasStrongMatch = bestScore >= 35;
+
+            // Sélectionner les meilleures bouteilles (jusqu'à 5)
+            const topRecommendations = hasStrongMatch
+                ? scoredWines.filter(item => item.score >= 25).slice(0, 5)
+                : scoredWines.slice(0, 3);
+
+            // 4. Générer le rendu HTML des recommandations
+            let headerNotice = "";
+            if (!hasStrongMatch) {
+                headerNotice = `
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-950 space-y-1">
+                        <p class="font-bold">💡 Aucun accord classique parfait en stock pour « ${escapeHTML(rawDish)} »</p>
+                        <p class="text-[11px] text-amber-900">Voici néanmoins les meilleures alternatives actuellement disponibles dans votre cave :</p>
+                    </div>
+                `;
+            } else {
+                const detectedLabel = matchedProfile ? matchedProfile.label : rawDish;
+                headerNotice = `
+                    <div class="flex items-center justify-between text-xs px-1">
+                        <span class="text-stone-500">Profil détecté : <strong class="text-wine-900">${escapeHTML(detectedLabel)}</strong></span>
+                        <span class="text-[11px] font-semibold text-emerald-700">${topRecommendations.length} suggestion(s)</span>
+                    </div>
+                `;
+            }
+
+            const cardsHtml = topRecommendations.map((item, idx) => {
+                const w = item.wine;
+                let badgeLabel = "Alternative intéressante";
+                let badgeStyle = "bg-stone-100 text-stone-700 border-stone-200";
+                if (item.score >= 60 || (idx === 0 && hasStrongMatch)) {
+                    badgeLabel = "⭐ Accord Parfait";
+                    badgeStyle = "bg-emerald-100 text-emerald-900 border-emerald-300";
+                } else if (item.score >= 38) {
+                    badgeLabel = "✨ Très bon accord";
+                    badgeStyle = "bg-amber-100 text-amber-900 border-amber-300";
+                }
+
+                const yearStr = w.year ? String(w.year) : "NM";
+
+                return `
+                    <div class="bg-cream-50/80 border border-cream-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="space-y-1 min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeStyle}">${badgeLabel}</span>
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getTypeBadgeClasses(w.type)}">${escapeHTML(w.type)}</span>
+                                    <span class="text-[11px] font-bold text-wine-900">${escapeHTML(yearStr)}</span>
+                                </div>
+                                <h4 class="font-serif font-bold text-stone-900 text-base leading-snug">${escapeHTML(w.name)}</h4>
+                                <p class="text-xs text-stone-500 truncate">${w.appellation ? escapeHTML(w.appellation) : "Appellation non précisée"}</p>
+                            </div>
+                            <span class="text-[11px] font-bold bg-white border border-cream-200 text-wine-900 px-2.5 py-1 rounded-lg shrink-0">
+                                ${w.quantity} en cave
+                            </span>
+                        </div>
+
+                        <div class="bg-white border border-cream-200 rounded-xl p-3 space-y-1.5">
+                            <p class="text-xs text-stone-700 leading-relaxed">
+                                <strong class="text-wine-900">Pourquoi ce vin :</strong> ${escapeHTML(item.reason)}
+                            </p>
+                            ${item.maturityNote ? `<p class="text-[11px] font-semibold text-amber-800">⏳ ${escapeHTML(item.maturityNote)}</p>` : ""}
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-0.5">
+                            <button type="button" onclick="openBottleTonight('${w.id}')"
+                                class="flex-1 bg-wine-900 hover:bg-wine-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-2xs active:scale-95 transition-transform flex items-center justify-center gap-1.5">
+                                <span>🍾 Ouvrir 1 bouteille ce soir</span>
+                            </button>
+                            <button type="button" onclick="closeDishModal(); openDetailModal('${w.id}');"
+                                class="bg-white hover:bg-cream-100 text-stone-700 border border-cream-200 text-xs font-semibold py-2.5 px-3 rounded-xl active:scale-95 transition-transform">
+                                Fiche
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            container.innerHTML = headerNotice + cardsHtml;
+        }
+
+        function openBottleTonight(id) {
+            const wine = wines.find(w => w.id === id);
+            if (!wine || (Number(wine.quantity) || 0) <= 0) return;
+
+            wine.quantity = Number(wine.quantity) - 1;
+            saveWines();
+            renderAll();
+            findWinesForDish();
+            showToast(`🍾 Bonne dégustation ! (${wine.name} : ${wine.quantity} restante${wine.quantity > 1 ? "s" : ""})`, "success");
+        }
+
+        // ==========================================
+        // UTILITAIRES
+        // ==========================================
+        function showToast(message, type = "info") {
+            const container = document.getElementById("toast-container");
+            if (!container) return;
+
+            const colors = {
+                success: "bg-emerald-800 text-white",
+                warning: "bg-amber-700 text-white",
+                error: "bg-red-800 text-white",
+                info: "bg-stone-800 text-white"
+            };
+
+            const toast = document.createElement("div");
+            toast.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-full shadow-lg text-xs font-semibold animate-fade-in`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transition = "opacity 0.25s";
+                setTimeout(() => toast.remove(), 250);
+            }, 2800);
+        }
+
+        function escapeHTML(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+</html>
