@@ -4,73 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ma Cave & Sommelier IA</title>
-    <!-- Intégration de Tesseract.js pour la lecture OCR des étiquettes de vin -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #722f37;
             --primary-dark: #4a1c22;
-            --accent: #d4af37;
-            --bg: #0f0a0c;
-            --surface: #1e1518;
-            --surface-card: #2a1f24;
-            --text: #f8fafc;
-            --text-muted: #cbd5e1;
-            --border: #3f2a33;
+            --accent: #b8860b;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-card: #f1f5f9;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 90px; }
-        header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-        h1 { font-size: 1.5rem; color: var(--text); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: #fff; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
-        .btn { background-color: var(--accent); color: #000; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; font-size: 1rem; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.3); transition: transform 0.1s; }
+        .btn { background-color: var(--primary); color: #fff; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; font-size: 1rem; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(114, 47, 55, 0.2); transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
         .btn-secondary { background-color: var(--surface-card); color: var(--text); border: 1px solid var(--border); box-shadow: none; margin-top: 10px; }
-        .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        /* Filtres de tri neutres sur la page d'accueil */
         .filter-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
         .filter-container::-webkit-scrollbar { display: none; }
         .filter-chip { background: var(--surface-card); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
-        .filter-chip.active { background: var(--primary); color: var(--accent); border-color: var(--accent); font-weight: bold; }
+        .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: bold; }
 
         .bottle-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .bottle-item:last-child { border-bottom: none; }
         .bottle-info h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 4px; }
         .bottle-info p { font-size: 0.85rem; color: var(--text-muted); }
         
-        .badge { background-color: var(--primary-dark); color: var(--accent); padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; border: 1px solid var(--border); }
-        .badge-nm { background-color: #3b2d35; color: #f3e8ff; }
-        .badge-note { background-color: #1e293b; color: #38bdf8; border-color: #0369a1; }
-        .badge-peak { background-color: #2e1065; color: #c084fc; border-color: #6b21a8; }
+        .badge { background-color: #f1f5f9; color: var(--primary); padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; border: 1px solid var(--border); font-weight: 600; }
+        .badge-nm { background-color: #fef3c7; color: #92400e; }
+        .badge-note { background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .badge-peak { background-color: #fae8ff; color: #86198f; border-color: #f5d0fe; }
         
-        /* Codes couleurs pour les types de vins dans l'inventaire */
-        .type-rouge { color: #ef4444; font-weight: bold; }
-        .type-blanc { color: #facc15; font-weight: bold; }
-        .type-rose { color: #f472b6; font-weight: bold; }
-        .type-champagne { color: #fbbf24; font-weight: bold; }
-        .type-autre { color: #a78bfa; font-weight: bold; }
+        .type-rouge { color: #dc2626; font-weight: bold; }
+        .type-blanc { color: #ca8a04; font-weight: bold; }
+        .type-rose { color: #db2777; font-weight: bold; }
+        .type-champagne { color: #d97706; font-weight: bold; }
+        .type-autre { color: #7c3aed; font-weight: bold; }
 
-        /* Codes couleurs pour les accords */
-        .badge-perfect { background-color: #064e3b; color: #34d399; border-color: #059669; }
-        .badge-good { background-color: #1e3a8a; color: #60a5fa; border-color: #2563eb; }
-        .badge-alt { background-color: #3b2f2f; color: #fcd34d; border-color: #d97706; }
+        .badge-perfect { background-color: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+        .badge-good { background-color: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+        .badge-alt { background-color: #fef3c7; color: #92400e; border-color: #fde68a; }
 
         input, select, textarea { width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px; background-color: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; }
         label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
         
-        /* Barre de navigation du bas avec bouton d'ajout intégré */
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 12px; z-index: 100; backdrop-filter: blur(10px); }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 12px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
         .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
-        .nav-btn.active { color: var(--accent); }
+        .nav-btn.active { color: var(--primary); font-weight: bold; }
         .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
-        .nav-btn-add { background: var(--accent); color: #000; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.4); margin-top: -4px; cursor: pointer; border: none; }
+        .nav-btn-add { background: var(--primary); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(114, 47, 55, 0.3); margin-top: -4px; cursor: pointer; border: none; }
 
         .hidden { display: none !important; }
-        .ai-box { background: rgba(114, 47, 55, 0.15); border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.9rem; }
+        .ai-box { background: #fdf4f5; border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.9rem; }
         .score-row { display: flex; gap: 10px; margin-top: 10px; }
-        .score-box { flex: 1; background: var(--bg); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
-        .score-value { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+        .score-box { flex: 1; background: var(--surface-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+        .score-value { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -82,13 +76,12 @@
     <div class="container">
         <!-- VUE CAVE -->
         <div id="view-cave">
-            <div class="card" style="background: linear-gradient(135deg, #2a1f24, #1e1518); border-color: var(--accent); margin-bottom: 12px;">
-                <h3 style="color: var(--accent); margin-bottom: 4px;">🍽️ Assistant Repas Intelligent</h3>
+            <div class="card" style="background: linear-gradient(135deg, #fff5f5, #ffffff); border-color: var(--border); margin-bottom: 12px;">
+                <h3 style="color: var(--primary); margin-bottom: 4px;">🍽️ Assistant Repas Intelligent</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Trouvez l'accord parfait selon la cuisson et la sauce de votre plat.</p>
-                <button class="btn" style="background-color: var(--primary-dark); color: var(--text); border: 1px solid var(--accent); padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
+                <button class="btn" style="padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
-            <!-- Filtres rapides par type de vin -->
             <div class="filter-container" id="filter-chips">
                 <div class="filter-chip active" onclick="setFilter('Tous')">Tous</div>
                 <div class="filter-chip" onclick="setFilter('Rouge')">Rouge</div>
@@ -99,17 +92,13 @@
             </div>
 
             <h2>Mon Inventaire (<span id="bottle-count">0</span>)</h2>
-            <div class="card" id="bottle-list" style="margin-top: 12px; padding: 0;">
-                <!-- Liste injectée -->
-            </div>
+            <div class="card" id="bottle-list" style="margin-top: 12px; padding: 0;"></div>
         </div>
 
-        <!-- VUE RECHERCHE / DETAILS BOUTEILLE -->
+        <!-- VUE DETAILS BOUTEILLE -->
         <div id="view-details" class="hidden">
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
-            <div class="card" id="details-content">
-                <!-- Détails injectés -->
-            </div>
+            <div class="card" id="details-content"></div>
         </div>
 
         <!-- VUE ASSISTANT ACCORD -->
@@ -117,7 +106,7 @@
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
             <div class="card">
                 <h2>Quel vin pour mon plat ?</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Tapez votre plat librement ou choisissez une catégorie, puis cliquez sur Valider :</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Tapez votre plat librement (ex: blanquette de veau, sushis, magret...) :</p>
                 
                 <select id="pairing-preset" onchange="clearPresetOrCustom('preset')">
                     <option value="">-- Choisir une catégorie rapide --</option>
@@ -130,9 +119,8 @@
                     <option value="dessert">Dessert / Chocolat / Tarte</option>
                 </select>
 
-                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat (ex: Blanquette de veau, Pavé de saumon...)" oninput="clearPresetOrCustom('custom')">
-                
-                <button class="btn" style="margin-top: 4px; margin-bottom: 16px;" onclick="runPairingSearch()">🔍 Lancer l'analyse IA de l'accord</button>
+                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat précisément..." oninput="clearPresetOrCustom('custom')">
+                <button class="btn" style="margin-bottom: 16px;" onclick="runPairingSearch()">🔍 Lancer l'analyse IA de l'accord</button>
 
                 <div id="pairing-results" style="margin-top: 16px;">
                     <p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez renseigner un plat et lancer la recherche.</p>
@@ -142,17 +130,23 @@
     </div>
 
     <!-- MODAL AJOUT / EDITION -->
-    <div id="modal-bottle" class="hidden" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
+    <div id="modal-bottle" class="hidden" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
         <div class="card" style="width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
             <h2 id="modal-title" style="margin-bottom: 16px;">Ajouter une bouteille</h2>
             
-            <!-- BOUTON SCANNER ETIQUETTE -->
-            <div style="background: linear-gradient(135deg, #2a1f24, #3b2d35); border: 1px dashed var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
-                <label style="color: var(--accent); font-weight: bold; cursor: pointer; display: block;">
-                    📷 Scanner une étiquette (Photo)
-                    <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="scanBottleLabel(event)" style="display: none;">
+            <!-- CONFIGURATION CLE API GEMINI EXTERNE (OPTIONNEL MAIS PUISSANT) -->
+            <div style="background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-bottom: 14px;">
+                <label style="font-size:0.75rem; color:var(--text-muted);">Clé API Google Gemini (Optionnel - Pour scan photo & IA avancée) :</label>
+                <input type="password" id="gemini-api-key" placeholder="Collez votre clé API Gemini ici..." style="margin-top:4px; margin-bottom:4px; font-size:0.85rem; padding:8px;" onchange="saveGeminiKey()">
+            </div>
+
+            <!-- BOUTON SCANNER ETIQUETTE PAR IA VISION -->
+            <div style="background: #fdf4f5; border: 1px dashed var(--primary); padding: 12px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
+                <label style="color: var(--primary); font-weight: bold; cursor: pointer; display: block;">
+                    📷 Scanner l'étiquette avec Gemini Vision
+                    <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="scanBottleLabelWithGemini(event)" style="display: none;">
                 </label>
-                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Prenez en photo l'étiquette pour pré-remplir automatiquement le formulaire.</p>
+                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Nécessite une clé API Gemini renseignée ci-dessus pour identifier la bouteille sur photo.</p>
             </div>
 
             <input type="hidden" id="edit-id">
@@ -170,9 +164,9 @@
             </select>
 
             <label>Appellation / Région *</label>
-            <input type="text" id="b-appellation" placeholder="ex: Bordeaux, Bourgogne, Sancerre, Meursault...">
+            <input type="text" id="b-appellation" placeholder="ex: Meursault, Bordeaux, Sancerre...">
 
-            <label>Année (laisser vide si Non Millésimé / Champagne NM)</label>
+            <label>Année (laisser vide si Non Millésimé)</label>
             <input type="number" id="b-year" placeholder="ex: 2018">
 
             <label>Quantité en stock</label>
@@ -181,8 +175,8 @@
             <label>Ma Note Personnelle (/20)</label>
             <input type="number" id="b-user-note" step="0.5" min="0" max="20" placeholder="ex: 15.5">
 
-            <div style="background: var(--bg); padding: 12px; border-radius: 8px; border: 1px dashed var(--border); margin-bottom: 16px;">
-                <h4 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 8px;">Notes & Conseils personnels (Optionnel)</h4>
+            <div style="background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
+                <h4 style="color: var(--primary); font-size: 0.9rem; margin-bottom: 8px;">Notes & Conseils personnels (Optionnel)</h4>
                 <label>À boire avec :</label>
                 <input type="text" id="b-custom-food" placeholder="ex: Entrecôte grillée">
                 <label>Garde / Apogée :</label>
@@ -197,23 +191,20 @@
     </div>
 
     <!-- MODAL SYNCHRO / DRIVE -->
-    <div id="modal-sync" class="hidden" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
+    <div id="modal-sync" class="hidden" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
         <div class="card" style="width: 100%; max-width: 400px;">
-            <h2>☁️ Sauvegarde Cloud / Drive</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">Sauvegardez votre cave sur Google Drive ou restaurez un fichier existant.</p>
-            
-            <button class="btn" onclick="exportData()" style="margin-bottom: 12px;">📤 Enregistrer sur Google Drive</button>
-            
+            <h2>☁️ Sauvegarde Cloud / Fichier</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">Sauvegardez votre cave ou restaurez un fichier de sauvegarde.</p>
+            <button class="btn" onclick="exportData()" style="margin-bottom: 12px;">📤 Télécharger la sauvegarde</button>
             <label class="btn btn-secondary" style="display: block; text-align: center; margin-bottom: 16px; cursor: pointer;">
-                📥 Restaurer depuis un fichier
+                📥 Restaurer un fichier
                 <input type="file" id="import-file" accept=".json" onchange="importData(event)" style="display: none;">
             </label>
-
             <button class="btn btn-secondary" onclick="closeSyncModal()">Fermer</button>
         </div>
     </div>
 
-    <!-- NAVIGATION BAR DU BAS AVEC BOUTON D'AJOUT INTÉGRÉ -->
+    <!-- NAVIGATION BAR -->
     <div class="nav-bar">
         <button class="nav-btn active" onclick="switchView('cave')">
             <svg viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0c5.07.5 9 4.79 9 10s-3.93 9.5-9 10v-20z"/></svg>
@@ -231,11 +222,25 @@
     </div>
 
     <script>
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v8') || '[]');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v9') || '[]');
         let currentFilter = 'Tous';
+        let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if(document.getElementById('gemini-api-key')) {
+                document.getElementById('gemini-api-key').value = geminiApiKey;
+            }
+            renderCave();
+        });
+
+        function saveGeminiKey() {
+            geminiApiKey = document.getElementById('gemini-api-key').value.trim();
+            localStorage.setItem('gemini_api_key', geminiApiKey);
+            alert("Clé API Gemini enregistrée ! Le scan photo intelligent est désormais actif.");
+        }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v8', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v9', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -266,26 +271,16 @@
             }
         }
 
-        function clearPresetOrCostum(source) {
-            // Permet de désamorcer l'autre champ pour que la recherche soit propre
-        }
-
         function clearPresetOrCustom(source) {
-            if(source === 'preset') {
-                document.getElementById('pairing-custom').value = '';
-            } else {
-                document.getElementById('pairing-preset').value = '';
-            }
+            if(source === 'preset') document.getElementById('pairing-custom').value = '';
+            else document.getElementById('pairing-preset').value = '';
         }
 
         function renderCave() {
             const listEl = document.getElementById('bottle-list');
-            
             let filteredBottles = bottles.filter(b => {
                 if(currentFilter === 'Tous') return true;
-                if(currentFilter === 'Autres') {
-                    return b.type !== 'Rouge' && b.type !== 'Blanc' && b.type !== 'Rosé' && b.type !== 'Champagne / Effervescent';
-                }
+                if(currentFilter === 'Autres') return b.type !== 'Rouge' && b.type !== 'Blanc' && b.type !== 'Rosé' && b.type !== 'Champagne / Effervescent';
                 return b.type === currentFilter;
             });
 
@@ -324,93 +319,79 @@
                             <p><span class="${typeClass}">${typeTextClean}</span> • ${b.appellation}</p>
                             <div style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
                                 <span class="${badgeClass}">${yearDisplay}</span>
-                                <span class="badge" style="background:#2a1f24;">Qté: ${b.qty}</span>
+                                <span class="badge" style="background:#f1f5f9;">Qté: ${b.qty}</span>
                                 <span class="badge badge-peak">⏳ ${peakDisplay}</span>
                                 ${userNoteDisplay ? `<span class="badge badge-note">${userNoteDisplay}</span>` : ''}
                             </div>
                         </div>
-                        <div style="font-size: 1.2rem; color: var(--accent);">›</div>
+                        <div style="font-size: 1.2rem; color: var(--primary);">›</div>
                     </div>
                 `;
             });
             listEl.innerHTML = html;
         }
 
-        async function scanBottleLabel(event) {
+        // SCAN PHOTO AVEC GEMINI VISION (SI CLE API RENSEIGNEE)
+        async function scanBottleLabelWithGemini(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
+
+            if (!geminiApiKey) {
+                alert("Veuillez d'abord renseigner votre clé API Gemini dans le champ prévu en haut du formulaire pour activer le scan photo.");
+                return;
+            }
+
             const statusEl = document.getElementById('scan-status');
-            statusEl.innerText = "⏳ Analyse de l'étiquette par l'IA en cours...";
+            statusEl.innerText = "⏳ Analyse de l'étiquette par Gemini Vision...";
 
             try {
-                const result = await Tesseract.recognize(file, 'fra+eng', {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            statusEl.innerText = `⏳ Lecture en cours (${Math.round(m.progress * 100)}%)...`;
-                        }
-                    }
+                const base64Data = await toBase64(file);
+                const cleanBase64 = base64Data.split(',')[1];
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: "Analyse cette étiquette de vin. Renvoie STRICTEMENT un objet JSON valide avec ces 4 clés sans texte autour : {\"name\": \"Nom du domaine ou cuvée\", \"type\": \"Rouge ou Blanc ou Rosé ou Champagne / Effervescent\", \"appellation\": \"Appellation ou région précise\", \"year\": \"Année à 4 chiffres ou vide si non millésimé\"}" },
+                                { inlineData: { mimeType: file.type, data: cleanBase64 } }
+                            ]
+                        }]
+                    })
                 });
 
-                const text = result.data.text;
-                console.log("OCR Extrait :", text);
+                const data = await response.json();
+                const textResp = data.candidates[0].content.parts[0].text;
+                const jsonClean = textResp.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(jsonClean);
 
-                // Analyse intelligente du texte extrait de l'étiquette
-                let detectedName = "";
-                let detectedAppellation = "";
-                let detectedYear = "";
-                let detectedType = "Rouge";
+                document.getElementById('b-name').value = parsed.name || "";
+                document.getElementById('b-type').value = parsed.type || "Rouge";
+                document.getElementById('b-appellation').value = parsed.appellation || "";
+                document.getElementById('b-year').value = parsed.year || "";
 
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-                if (lines.length > 0) detectedName = lines[0];
-
-                const fullTextLower = text.toLowerCase();
-
-                // Détection de l'année (4 chiffres entre 1950 et 2026)
-                const yearMatch = text.match(/\b(19[5-9]\d|20[0-2]\d)\b/);
-                if (yearMatch) {
-                    detectedYear = yearMatch[0];
-                }
-
-                // Détection du type de vin et appellations majeures
-                if (fullTextLower.includes('champagne') || fullTextLower.includes('brut') || fullTextLower.includes('effervescent')) {
-                    detectedType = "Champagne / Effervescent";
-                    detectedAppellation = "Champagne";
-                } else if (fullTextLower.includes('blanc') || fullTextLower.includes('chablis') || fullTextLower.includes('sancerre') || fullTextLower.includes('meursault') || fullTextLower.includes('chardonnay')) {
-                    detectedType = "Blanc";
-                    if (fullTextLower.includes('meursault')) detectedAppellation = "Meursault";
-                    else if (fullTextLower.includes('chablis')) detectedAppellation = "Chablis";
-                    else if (fullTextLower.includes('sancerre')) detectedAppellation = "Sancerre";
-                    else detectedAppellation = "Bourgogne Blanc";
-                } else if (fullTextLower.includes('rosé')) {
-                    detectedType = "Rosé";
-                    detectedAppellation = "Côtes de Provence";
-                } else {
-                    detectedType = "Rouge";
-                    if (fullTextLower.includes('bordeaux')) detectedAppellation = "Bordeaux";
-                    else if (fullTextLower.includes('bourgogne')) detectedAppellation = "Bourgogne";
-                    else if (fullTextLower.includes('pauillac')) detectedAppellation = "Pauillac";
-                    else if (fullTextLower.includes('margaux')) detectedAppellation = "Margaux";
-                    else if (fullTextLower.includes('rhône') || fullTextLower.includes('cotes du rhone')) detectedAppellation = "Côtes du Rhône";
-                    else detectedAppellation = lines[1] || "Appellation contrôlée";
-                }
-
-                // Pré-remplissage du formulaire
-                document.getElementById('b-name').value = detectedName || "Vin scanné";
-                document.getElementById('b-type').value = detectedType;
-                document.getElementById('b-appellation').value = detectedAppellation;
-                document.getElementById('b-year').value = detectedYear;
-
-                statusEl.innerText = "✅ Étiquette analysée et formulaires pré-remplis avec succès !";
+                statusEl.innerText = "✅ Étiquette reconnue et formulaire pré-rempli avec succès !";
             } catch (err) {
                 console.error(err);
-                statusEl.innerText = "❌ Erreur de lecture. Veuillez remplir les champs manuellement.";
+                statusEl.innerText = "❌ Erreur lors de l'analyse Gemini. Vérifiez votre clé API.";
             }
+        }
+
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
         }
 
         function openAddModal(index = null) {
             document.getElementById('modal-bottle').classList.remove('hidden');
-            document.getElementById('scan-status').innerText = "Prenez en photo l'étiquette pour pré-remplir automatiquement le formulaire.";
+            if(document.getElementById('gemini-api-key')) document.getElementById('gemini-api-key').value = geminiApiKey;
+            document.getElementById('scan-status').innerText = geminiApiKey ? "Prêt à scanner l'étiquette." : "Renseignez votre clé API Gemini ci-dessus pour activer le scan.";
+            
             if(index !== null) {
                 let b = bottles[index];
                 document.getElementById('modal-title').innerText = "Modifier la bouteille";
@@ -458,51 +439,25 @@
             }
 
             let bottleData = { name, type, appellation, year, qty, userNote, customFood, customPeak };
-
-            if(editId !== '') {
-                bottles[editId] = bottleData;
-            } else {
-                bottles.push(bottleData);
-            }
+            if(editId !== '') bottles[editId] = bottleData;
+            else bottles.push(bottleData);
 
             saveToStorage();
             closeModal();
             if(editId !== '') openDetails(editId);
         }
 
-        function openSyncModal() {
-            document.getElementById('modal-sync').classList.remove('hidden');
-        }
-
-        function closeSyncModal() {
-            document.getElementById('modal-sync').classList.add('hidden');
-        }
+        function openSyncModal() { document.getElementById('modal-sync').classList.remove('hidden'); }
+        function closeSyncModal() { document.getElementById('modal-sync').classList.add('hidden'); }
 
         async function exportData() {
-            const dataStr = JSON.stringify(bottles, null, 2);
-            const blob = new Blob([dataStr], {type: 'application/json'});
-            const file = new File([blob], 'ma-cave-vin.json', {type: 'application/json'});
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        title: 'Ma Cave - Sauvegarde',
-                        text: 'Fichier de sauvegarde de ma cave à vin.',
-                        files: [file]
-                    });
-                    return;
-                } catch (err) { console.log('Partage annulé'); }
-            }
-            
+            const blob = new Blob([JSON.stringify(bottles, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'ma-cave-vin.json';
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert('Fichier téléchargé. Vous pouvez l’importer dans Google Drive.');
         }
 
         function importData(event) {
@@ -515,9 +470,7 @@
                     saveToStorage();
                     closeSyncModal();
                     alert('Cave restaurée avec succès !');
-                } catch (err) {
-                    alert('Erreur lors de la lecture du fichier.');
-                }
+                } catch (err) { alert('Erreur fichier.'); }
             };
             reader.readAsText(file);
         }
@@ -550,85 +503,75 @@
                 </div>
 
                 <div class="ai-box">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <strong style="color: var(--accent);">🤖 Analyse du Sommelier IA :</strong>
-                        <button class="btn btn-secondary" style="margin-top:0; width:auto; padding: 4px 8px; font-size:0.75rem;" onclick="reforceAIAnalysis(${index})">🔄 Relancer l'analyse</button>
-                    </div>
+                    <strong style="color: var(--primary);">🤖 Analyse du Sommelier IA :</strong>
                     <p style="margin-top: 6px;"><strong>Accords :</strong> ${b.customFood || aiAnalysis.food}</p>
                     <p style="margin-top: 4px;"><strong>Garde & Apogée :</strong> ${b.customPeak || aiAnalysis.peak}</p>
-                    <p style="margin-top: 4px;"><strong>Prix moyen estimé :</strong> ${aiAnalysis.price}</p>
+                    <p style="margin-top: 4px;"><strong>Prix estimé :</strong> ${aiAnalysis.price}</p>
                 </div>
 
-                <div style="background: var(--bg); padding: 12px; border-radius: 8px; margin-top: 12px; display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <div style="font-size: 0.9rem; font-weight: bold;">En stock : ${b.qty} bouteille(s)</div>
-                    </div>
+                <div style="background: var(--surface-card); padding: 12px; border-radius: 8px; margin-top: 12px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border);">
+                    <div style="font-size: 0.9rem; font-weight: bold;">En stock : ${b.qty} bouteille(s)</div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn" style="padding: 6px 12px; font-size: 0.9rem;" onclick="updateQty(${index}, 1)">+</button>
                         <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.9rem; margin-top:0;" onclick="updateQty(${index}, -1)">-</button>
                     </div>
                 </div>
 
-                <button class="btn btn-secondary" style="margin-top: 16px; border-color: #991b1b; color: #f87171;" onclick="deleteBottle(${index})">Supprimer cette bouteille</button>
+                <button class="btn btn-secondary" style="margin-top: 16px; border-color: #ef4444; color: #dc2626;" onclick="deleteBottle(${index})">Supprimer cette bouteille</button>
             `;
 
             document.getElementById('details-content').innerHTML = content;
             switchView('details');
         }
 
-        function reforceAIAnalysis(index) {
-            alert("Analyse du Sommelier IA actualisée avec succès !");
-            openDetails(index);
-        }
-
+        // GENERATION DYNAMIQUE VARIEE DES CONSEILS ET NOTES
         function generateAIScoreAndAdvice(b) {
             let app = b.appellation.toLowerCase();
-            let name = b.name.toLowerCase();
             let type = b.type.toLowerCase();
-            let yr = parseInt(b.year) || 2022;
+            let yr = parseInt(b.year) || 2021;
 
-            let scoreText = "14.0 / 20";
-            let reliabilityLabel = "Estimation intelligente";
-            let price = "12€ - 25€";
-            let food = "Viandes blanches, plats cuisinés de terroir ou charcuterie.";
-            let peakYears = `${yr + 2}-${yr + 6}`;
-            let peak = `À apprécier entre ${yr + 2} et ${yr + 6}.`;
+            let scoreText = "14.5 / 20";
+            let reliabilityLabel = "Estimation Vignoble de Caractère";
+            let price = "14€ - 28€";
+            let food = `Plats régionaux de ${b.appellation}, viandes blanches rôties ou charcuterie fine.`;
+            let peakYears = `${yr + 3}-${yr + 7}`;
+            let peak = `À apprécier entre ${yr + 3} et ${yr + 7} pour profiter de son fruité.`;
 
             if (type.includes('champagne') || app.includes('champagne') || type.includes('effervescent')) {
                 scoreText = "15.5 / 20";
-                reliabilityLabel = "Estimation Bulles & Fêtes";
-                price = "25€ - 55€";
-                food = "Apéritif festif, poissons fins, fruits de mer, volailles crémées.";
-                peakYears = `${yr}-${yr + 4}`;
-                peak = `Prêt à déguster (garde optimale ${yr}-${yr + 4}).`;
+                reliabilityLabel = "Cuvée Effervescente";
+                price = "28€ - 60€";
+                food = "Apéritif dînatoire, coquillages, poissons fins ou volailles crémées.";
+                peakYears = `${yr}-${yr + 5}`;
+                peak = `Prêt à déguster (garde optimale ${yr}-${yr + 5}).`;
             } else if (app.includes('meursault') || app.includes('chablis') || app.includes('sancerre') || app.includes('bourgogne blanc')) {
-                scoreText = "16.5 / 20";
-                reliabilityLabel = "Grand Blanc de Bourgogne/Loire";
-                price = "30€ - 75€";
-                food = "Poissons nobles en sauce crémée, blanquette de veau, volailles aux morilles, comté affiné.";
-                peakYears = `${yr + 3}-${yr + 10}`;
-                peak = `Apogée optimale estimée entre ${yr + 3} et ${yr + 10}.`;
-            } else if (app.includes('bordeaux') || app.includes('bourgogne') || app.includes('rhône') || app.includes('pauillac') || app.includes('margaux') || app.includes('châteauneuf')) {
-                scoreText = "16.5 / 20";
-                reliabilityLabel = "Grand Vignoble";
-                price = "25€ - 65€";
-                food = "Viandes rouges grillées, gibiers, plats en sauce mijotés, fromages affinés.";
+                scoreText = "17.0 / 20";
+                reliabilityLabel = "Grand Blanc de Garde";
+                price = "32€ - 80€";
+                food = "Poissons nobles au beurre blanc, blanquette de veau aux morilles, fromages de chèvre affinés.";
                 peakYears = `${yr + 4}-${yr + 12}`;
-                peak = `Apogée estimée entre ${yr + 4} et ${yr + 12}.`;
-            } else if (type.includes('blanc') || app.includes('alsace')) {
-                scoreText = "15.0 / 20";
-                reliabilityLabel = "Vin Blanc Frais";
-                price = "15€ - 30€";
-                food = "Poissons grillés, fruits de mer, fromages de chèvre, salades composées.";
-                peakYears = `${yr + 1}-${yr + 5}`;
-                peak = `À boire de préférence entre ${yr + 1} et ${yr + 5}.`;
+                peak = `Apogée complexe estimée entre ${yr + 4} et ${yr + 12}.`;
+            } else if (app.includes('bordeaux') || app.includes('pauillac') || app.includes('margaux') || app.includes('saint-émilion')) {
+                scoreText = "16.5 / 20";
+                reliabilityLabel = "Grand Cru Classé / Rive Gauche-Droite";
+                price = "25€ - 90€";
+                food = "Côte de bœuf maturée, agneau de sept heures, gibier à plume ou fromages corsés.";
+                peakYears = `${yr + 5}-${yr + 15}`;
+                peak = `En pleine plénitude entre ${yr + 5} et ${yr + 15}.`;
+            } else if (app.includes('rhône') || app.includes('châteauneuf') || app.includes('côte-rôtie')) {
+                scoreText = "16.0 / 20";
+                reliabilityLabel = "Vallée du Rhône Epicée";
+                price = "22€ - 70€";
+                food = "Daube de bœuf provençale, magret de canard aux épices, côtes d'agneau grillées.";
+                peakYears = `${yr + 4}-${yr + 10}`;
+                peak = `Apogée idéale entre ${yr + 4} et ${yr + 10}.`;
             } else if (type.includes('rosé')) {
                 scoreText = "13.5 / 20";
-                reliabilityLabel = "Vin Rosé Fruité";
-                price = "10€ - 20€";
-                food = "Barbecue, grillades d'été, cuisine méditerranéenne, apéritif.";
+                reliabilityLabel = "Rosé Fruité & Frais";
+                price = "10€ - 22€";
+                food = "Barbecue estival, salades composées, cuisine méditerranéenne ou tapas.";
                 peakYears = `${yr}-${yr + 2}`;
-                peak = `À consommer rapidement (${yr}-${yr + 2}).`;
+                peak = `À consommer rapidement dans sa jeunesse (${yr}-${yr + 2}).`;
             }
 
             return { scoreText, reliabilityLabel, price, food, peak, peakYears };
@@ -636,22 +579,18 @@
 
         function updateQty(index, delta) {
             bottles[index].qty = Math.max(0, (parseInt(bottles[index].qty) || 0) + delta);
-            if(bottles[index].qty === 0) {
-                if(!confirm("Le stock est à 0. Voulez-vous supprimer cette bouteille ?")) {
-                    bottles[index].qty = 1;
-                } else {
-                    bottles.splice(index, 1);
-                    saveToStorage();
-                    switchView('cave');
-                    return;
-                }
+            if(bottles[index].qty === 0 && confirm("Stock à 0. Supprimer cette bouteille ?")) {
+                bottles.splice(index, 1);
+                saveToStorage();
+                switchView('cave');
+                return;
             }
             saveToStorage();
             openDetails(index);
         }
 
         function deleteBottle(index) {
-            if(confirm("Êtes-vous sûr de vouloir supprimer cette bouteille de votre cave ?")) {
+            if(confirm("Confirmer la suppression de cette bouteille ?")) {
                 bottles.splice(index, 1);
                 saveToStorage();
                 switchView('cave');
@@ -671,87 +610,64 @@
             let resultsEl = document.getElementById('pairing-results');
 
             if(!preset && !custom) {
-                alert("Veuillez sélectionner une catégorie ou saisir un plat dans la recherche.");
+                alert("Veuillez sélectionner une catégorie ou saisir un plat.");
                 return;
             }
 
             let availableBottles = bottles.filter(b => parseInt(b.qty) > 0);
-
             if(availableBottles.length === 0) {
-                resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Aucune bouteille disponible en stock (quantité > 0) dans votre cave.</p>`;
+                resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Aucune bouteille en stock dans votre cave.</p>`;
                 return;
             }
 
-            // Synthèse de la recherche combinée (Preset ou Custom pur)
             let queryText = custom !== "" ? custom : preset;
 
             let matches = availableBottles.map(b => {
-                let score = 0;
-                let reason = "Accord souple et agréable.";
+                let score = 1;
+                let reason = "Alternative originale à découvrir.";
                 let matchType = "Alternative possible";
                 let badgeClass = "badge-alt";
 
                 let type = b.type.toLowerCase();
                 let app = (b.appellation + " " + b.name).toLowerCase();
-                let customFoodNotes = (b.customFood || "").toLowerCase();
-                let aiAnalysis = generateAIScoreAndAdvice(b);
-                let aiFoodNotes = aiAnalysis.food.toLowerCase();
 
-                // Moteur sémantique ultra-fin croisant la requête, les notes perso et l'analyse IA de la bouteille
-                let isCreamyOrBlanquette = queryText.includes('blanquette') || queryText.includes('crème') || queryText.includes('morille') || queryText.includes('veau en sauce');
-                let isRichMeatOrStew = queryText.includes('cassoulet') || queryText.includes('gibier') || queryText.includes('bœuf') || queryText.includes('viande rouge') || queryText.includes('carbonade') || queryText.includes('daube') || queryText.includes('magret');
-                let isFishOrSeafood = queryText.includes('poisson') || queryText.includes('sushi') || queryText.includes('huître') || queryText.includes('crustacé') || queryText.includes('fruits de mer') || queryText.includes('saumon');
-                let isCheeseOrRaclette = queryText.includes('fromage') || queryText.includes('raclette') || queryText.includes('fondue') || queryText.includes('tartiflette');
-                let isAperitifOrFestive = queryText.includes('aperitif') || queryText.includes('fête') || queryText.includes('coquillage');
-                let isDessertOrChocolate = queryText.includes('dessert') || queryText.includes('chocolat') || queryText.includes('tarte') || queryText.includes('sucre');
-                let isPoultryOrWhiteMeat = queryText.includes('volaille') || queryText.includes('poulet') || queryText.includes('veau') || queryText.includes('rôti');
+                let isBlanquetteOrCream = queryText.includes('blanquette') || queryText.includes('crème') || queryText.includes('morille') || queryText.includes('veau en sauce');
+                let isRedMeat = queryText.includes('bœuf') || queryText.includes('viande rouge') || queryText.includes('cassoulet') || queryText.includes('gibier') || queryText.includes('magret');
+                let isFish = queryText.includes('poisson') || queryText.includes('sushi') || queryText.includes('huître') || queryText.includes('saumon') || queryText.includes('mer');
+                let isCheese = queryText.includes('fromage') || queryText.includes('raclette') || queryText.includes('tartiflette');
+                let isAperitif = queryText.includes('apéritif') || queryText.includes('fête');
+                let isDessert = queryText.includes('dessert') || queryText.includes('chocolat') || queryText.includes('tarte');
 
-                // Logique ciblée sur Meursault et grands blancs pour les plats crémés (Blanquette)
-                if (isCreamyOrBlanquette && (app.includes('meursault') || app.includes('bourgogne blanc') || app.includes('chablis') || type.includes('blanc'))) {
-                    score += 6;
+                if (isBlanquetteOrCream && (app.includes('meursault') || app.includes('bourgogne blanc') || app.includes('chablis') || type.includes('blanc'))) {
+                    score = 6;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "La rondeur beurrée et la vivacité d'un grand vin blanc (type Meursault ou Bourgogne) épousent somptueusement la sauce crémeuse et la texture fondante de la blanquette.";
-                } else if (isRichMeatOrStew && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('cahors') || app.includes('madiran'))) {
-                    score += 5;
+                    reason = "La rondeur beurrée et la minéralité de ce blanc élégant épousent à la perfection la texture fondante et la sauce crémée.";
+                } else if (isRedMeat && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('pauillac'))) {
+                    score = 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "Les tanins puissants de ce vin rouge enrobent parfaitement la richesse d'un plat en sauce ou d'un cassoulet.";
-                } else if (isFishOrSeafood && (type.includes('blanc') || type.includes('champagne') || type.includes('effervescent'))) {
-                    score += 5;
+                    reason = "La structure tannique et l'ampleur de ce vin rouge enrobent idéalement la puissance du plat.";
+                } else if (isFish && (type.includes('blanc') || type.includes('champagne') || type.includes('effervescent'))) {
+                    score = 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "La fraîcheur et la minéralité subliment la iode des poissons et fruits de mer.";
-                } else if (isCheeseOrRaclette && (type.includes('rouge') || type.includes('blanc') || type.includes('savoie'))) {
-                    score += 4;
+                    reason = "La fraîcheur saline et la vivacité de la cuvée subliment la finesse iodée.";
+                } else if (isCheese && (type.includes('rouge') || type.includes('blanc'))) {
+                    score = 4;
                     matchType = "Très bon accord";
                     badgeClass = "badge-good";
-                    reason = "L'ampleur du vin équilibre la générosité du fromage fondu.";
-                } else if (isAperitifOrFestive && (type.includes('champagne') || type.includes('effervescent') || type.includes('rosé'))) {
-                    score += 5;
+                    reason = "L'équilibre du vin tempère la générosité du fromage.";
+                } else if (isAperitif && (type.includes('champagne') || type.includes('effervescent') || type.includes('rosé'))) {
+                    score = 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "L'effervescence et la vivacité lancent idéalement la dégustation.";
-                } else if (isDessertOrChocolate && (type.includes('moelleux') || type.includes('liquoreux') || type.includes('champagne'))) {
-                    score += 5;
+                    reason = "L'effervescence pétillante et fruitée ouvre l'appétit avec brio.";
+                } else if (isDessert && (type.includes('moelleux') || type.includes('liquoreux') || type.includes('champagne'))) {
+                    score = 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "La douceur ou l'effervescence s'accordent harmonieusement avec les notes sucrées.";
-                } else if (isPoultryOrWhiteMeat && (type.includes('blanc') || type.includes('rouge léger') || type.includes('bourgogne'))) {
-                    score += 4;
-                    matchType = "Très bon accord";
-                    badgeClass = "badge-good";
-                    reason = "La subtilité du vin respecte la tendreté de la volaille.";
-                } else if (customFoodNotes.includes(queryText) || aiFoodNotes.includes(queryText)) {
-                    score += 4;
-                    matchType = "Très bon accord";
-                    badgeClass = "badge-good";
-                    reason = "Correspondance détectée directement dans les notes et recommandations de la bouteille.";
-                } else {
-                    score += 1;
-                    matchType = "Alternative possible";
-                    badgeClass = "badge-alt";
-                    reason = "Une option originale à tenter selon vos envies du moment.";
+                    reason = "L'accord gourmand par excellence avec la douceur du dessert.";
                 }
 
                 return { b, score, matchType, badgeClass, reason };
@@ -760,10 +676,9 @@
             matches.sort((x, y) => y.score - x.score);
 
             let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> analysées pour « <i>${queryText}</i> » :</p>`;
-            
             matches.forEach(m => {
                 html += `
-                    <div class="card" style="background: var(--bg); margin-bottom: 10px; border-left: 4px solid var(--accent);">
+                    <div class="card" style="background: var(--surface); margin-bottom: 10px; border-left: 4px solid var(--primary);">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <strong>${m.b.name}</strong>
                             <span class="badge ${m.badgeClass}">${m.matchType}</span>
@@ -774,7 +689,6 @@
                     </div>
                 `;
             });
-
             resultsEl.innerHTML = html;
         }
 
