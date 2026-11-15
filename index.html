@@ -26,11 +26,11 @@
         .btn-secondary { background-color: var(--surface-card); color: var(--text); border: 1px solid var(--border); box-shadow: none; margin-top: 10px; }
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         
-        /* Filtres de tri sur la page d'accueil */
+        /* Filtres de tri colorés sur la page d'accueil */
         .filter-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
         .filter-container::-webkit-scrollbar { display: none; }
-        .filter-chip { background: var(--surface-card); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; cursor: pointer; }
-        .filter-chip.active { background: var(--primary); color: var(--accent); border-color: var(--accent); font-weight: bold; }
+        .filter-chip { background: var(--surface-card); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
+        .filter-chip.active { font-weight: bold; }
 
         .bottle-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .bottle-item:last-child { border-bottom: none; }
@@ -39,6 +39,7 @@
         .badge { background-color: var(--primary-dark); color: var(--accent); padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; border: 1px solid var(--border); }
         .badge-nm { background-color: #3b2d35; color: #f3e8ff; }
         .badge-note { background-color: #1e293b; color: #38bdf8; border-color: #0369a1; }
+        .badge-peak { background-color: #2e1065; color: #c084fc; border-color: #6b21a8; }
         
         /* Codes couleurs pour les accords */
         .badge-perfect { background-color: #064e3b; color: #34d399; border-color: #059669; }
@@ -47,10 +48,14 @@
 
         input, select, textarea { width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px; background-color: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; }
         label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px; z-index: 100; backdrop-filter: blur(10px); }
-        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+        
+        /* Barre de navigation du bas avec bouton d'ajout intégré */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 12px; z-index: 100; backdrop-filter: blur(10px); }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
         .nav-btn.active { color: var(--accent); }
-        .nav-btn svg { width: 24px; height: 24px; fill: currentColor; }
+        .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
+        .nav-btn-add { background: var(--accent); color: #000; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(212, 175, 55, 0.4); margin-top: -4px; cursor: pointer; border: none; }
+
         .hidden { display: none !important; }
         .ai-box { background: rgba(114, 47, 55, 0.15); border-left: 4px solid var(--accent); padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.9rem; }
         .score-row { display: flex; gap: 10px; margin-top: 10px; }
@@ -67,25 +72,20 @@
     <div class="container">
         <!-- VUE CAVE -->
         <div id="view-cave">
-            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                <button class="btn" onclick="openAddModal()">+ Ajouter une bouteille</button>
-                <button class="btn btn-secondary" onclick="openSyncModal()" style="margin-top:0; width: auto; padding: 12px 16px;">☁️ Drive</button>
-            </div>
-            
-            <div class="card" style="background: linear-gradient(135deg, #2a1f24, #1e1518); border-color: var(--accent);">
-                <h3 style="color: var(--accent); margin-bottom: 6px;">🍽️ Assistant Repas</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Trouvez le vin idéal pour votre plat parmi les bouteilles actuellement en stock.</p>
-                <button class="btn" style="background-color: var(--primary-dark); color: var(--text); border: 1px solid var(--accent);" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
+            <div class="card" style="background: linear-gradient(135deg, #2a1f24, #1e1518); border-color: var(--accent); margin-bottom: 12px;">
+                <h3 style="color: var(--accent); margin-bottom: 4px;">🍽️ Assistant Repas</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Trouvez le vin idéal pour votre plat parmi les bouteilles en stock.</p>
+                <button class="btn" style="background-color: var(--primary-dark); color: var(--text); border: 1px solid var(--accent); padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
-            <!-- Filtres rapides par type de vin -->
+            <!-- Filtres rapides par type de vin colorés -->
             <div class="filter-container" id="filter-chips">
                 <div class="filter-chip active" onclick="setFilter('Tous')">Tous</div>
-                <div class="filter-chip" onclick="setFilter('Rouge')">Rouge</div>
-                <div class="filter-chip" onclick="setFilter('Blanc')">Blanc</div>
-                <div class="filter-chip" onclick="setFilter('Rosé')">Rosé</div>
-                <div class="filter-chip" onclick="setFilter('Champagne / Effervescent')">Champagne</div>
-                <div class="filter-chip" onclick="setFilter('Autres')">Autres</div>
+                <div class="filter-chip" style="color: #ef4444; border-color: #ef4444;" onclick="setFilter('Rouge')">🔴 Rouge</div>
+                <div class="filter-chip" style="color: #facc15; border-color: #facc15;" onclick="setFilter('Blanc')">🟡 Blanc</div>
+                <div class="filter-chip" style="color: #f472b6; border-color: #f472b6;" onclick="setFilter('Rosé')">🌸 Rosé</div>
+                <div class="filter-chip" style="color: #fbbf24; border-color: #fbbf24;" onclick="setFilter('Champagne / Effervescent')">✨ Champagne</div>
+                <div class="filter-chip" style="color: #a78bfa; border-color: #a78bfa;" onclick="setFilter('Autres')">📦 Autres</div>
             </div>
 
             <h2>Mon Inventaire (<span id="bottle-count">0</span>)</h2>
@@ -107,20 +107,20 @@
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
             <div class="card">
                 <h2>Quel vin pour mon plat ?</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Sélectionnez ou décrivez votre plat pour voir un large choix dans votre cave :</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Choisissez une catégorie ou tapez votre plat (ex: cassoulet, sushis, magret...) :</p>
                 
                 <select id="pairing-preset" onchange="runPairingSearch()">
                     <option value="">-- Choisir une catégorie rapide --</option>
-                    <option value="viande rouge">Viande rouge / Gibier / Bœuf</option>
+                    <option value="viande rouge">Viande rouge / Gibier / Bœuf / Cassoulet</option>
                     <option value="volaille">Volaille / Viande blanche / Rôti</option>
-                    <option value="poisson">Poisson / Fruits de mer / Huîtres</option>
+                    <option value="poisson">Poisson / Fruits de mer / Huîtres / Sushis</option>
                     <option value="fromage">Fromages / Raclette / Tartiflette</option>
                     <option value="epice">Plats épicés / Asiatique / Curry</option>
                     <option value="aperitif">Apéritif / Festif / Champagne</option>
                     <option value="dessert">Dessert / Chocolat / Tarte</option>
                 </select>
 
-                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat (ex: Pavé de saumon grillé...)" oninput="runPairingSearch()">
+                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat librement (ex: Cassoulet traditionnel...)" oninput="runPairingSearch()">
                 
                 <div id="pairing-results" style="margin-top: 16px;">
                     <!-- Résultats accord enrichis -->
@@ -164,7 +164,7 @@
                 <label>À boire avec :</label>
                 <input type="text" id="b-custom-food" placeholder="ex: Entrecôte grillée">
                 <label>Garde / Apogée :</label>
-                <input type="text" id="b-custom-peak" placeholder="ex: À boire d'ici 2028">
+                <input type="text" id="b-custom-peak" placeholder="ex: 2026-2030">
             </div>
 
             <div style="display: flex; gap: 10px;">
@@ -191,7 +191,7 @@
         </div>
     </div>
 
-    <!-- NAVIGATION BAR -->
+    <!-- NAVIGATION BAR DU BAS AVEC BOUTON D'AJOUT INTÉGRÉ -->
     <div class="nav-bar">
         <button class="nav-btn active" onclick="switchView('cave')">
             <svg viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0c5.07.5 9 4.79 9 10s-3.93 9.5-9 10v-20z"/></svg>
@@ -201,6 +201,7 @@
             <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8.18c3.12.56 5.5 3.28 5.5 6.56v1.26h-3.5v-1.26c0-2.21-1.79-4-4-4s-4 1.79-4 4v1.26H7.5v-1.26c0-3.28 2.38-6 5.5-6.56V6h-2V2h6v4h-2z"/></svg>
             Accords Mets
         </button>
+        <button class="nav-btn-add" onclick="openAddModal()">+</button>
         <button class="nav-btn" onclick="openSyncModal()">
             <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
             Sauvegarde
@@ -208,21 +209,31 @@
     </div>
 
     <script>
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v5') || '[]');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v6') || '[]');
         let currentFilter = 'Tous';
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v5', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v6', JSON.stringify(bottles));
             renderCave();
         }
 
         function setFilter(filterType) {
             currentFilter = filterType;
             document.querySelectorAll('.filter-chip').forEach(chip => {
-                if(chip.innerText.toLowerCase() === filterType.toLowerCase() || (filterType === 'Tous' && chip.innerText === 'Tous')) {
+                let text = chip.innerText.replace(/[🔴🟡🌸✨📦]/g, '').trim();
+                if(text.toLowerCase() === filterType.toLowerCase() || (filterType === 'Tous' && text === 'Tous')) {
                     chip.classList.add('active');
+                    chip.style.backgroundColor = 'var(--primary)';
+                    chip.style.color = 'var(--accent)';
                 } else {
                     chip.classList.remove('active');
+                    chip.style.backgroundColor = 'var(--surface-card)';
+                    if(text === 'Rouge') chip.style.color = '#ef4444';
+                    else if(text === 'Blanc') chip.style.color = '#facc15';
+                    else if(text === 'Rosé') chip.style.color = '#f472b6';
+                    else if(text === 'Champagne') chip.style.color = '#fbbf24';
+                    else if(text === 'Autres') chip.style.color = '#a78bfa';
+                    else chip.style.color = 'var(--text-muted)';
                 }
             });
             renderCave();
@@ -240,6 +251,10 @@
                 document.getElementById('view-details').classList.remove('hidden');
             } else if(viewName === 'pairing') {
                 document.getElementById('view-pairing').classList.remove('hidden');
+                // S'assure que la recherche est vide à l'ouverture
+                document.getElementById('pairing-preset').value = '';
+                document.getElementById('pairing-custom').value = '';
+                document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez sélectionner une catégorie ou saisir un plat ci-dessus pour lancer la recherche d'accords.</p>`;
             }
         }
 
@@ -263,24 +278,28 @@
 
             let html = '';
             bottles.forEach((b, index) => {
-                // Filtrage d'affichage dans la boucle globale
                 let matchesFilter = (currentFilter === 'Tous') || 
                                     (currentFilter === 'Autres' && b.type !== 'Rouge' && b.type !== 'Blanc' && b.type !== 'Rosé' && b.type !== 'Champagne / Effervescent') ||
                                     (b.type === currentFilter);
                 if(!matchesFilter) return;
 
-                let yearDisplay = b.year ? b.year : 'Non millésimé';
+                let yearDisplay = b.year ? b.year : 'NM';
                 let badgeClass = b.year ? 'badge' : 'badge badge-nm';
                 let userNoteDisplay = (b.userNote !== undefined && b.userNote !== '') ? `⭐ ${b.userNote}/20` : '';
+                
+                // Calcul de la garde visible directement sur l'accueil
+                let aiAnalysis = generateAIScoreAndAdvice(b);
+                let peakDisplay = b.customPeak || aiAnalysis.peakYears;
 
                 html += `
                     <div class="bottle-item" onclick="openDetails(${index})">
                         <div class="bottle-info">
                             <h3>${b.name}</h3>
                             <p>${b.type} • ${b.appellation}</p>
-                            <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+                            <div style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
                                 <span class="${badgeClass}">${yearDisplay}</span>
                                 <span class="badge" style="background:#2a1f24;">Qté: ${b.qty}</span>
+                                <span class="badge badge-peak">⏳ ${peakDisplay}</span>
                                 ${userNoteDisplay ? `<span class="badge badge-note">${userNoteDisplay}</span>` : ''}
                             </div>
                         </div>
@@ -407,7 +426,6 @@
         function openDetails(index) {
             let b = bottles[index];
             let yearDisplay = b.year ? b.year : 'Non millésimé';
-            
             let aiAnalysis = generateAIScoreAndAdvice(b);
 
             let content = `
@@ -468,40 +486,46 @@
             let app = b.appellation.toLowerCase();
             let name = b.name.toLowerCase();
             let type = b.type.toLowerCase();
+            let yr = parseInt(b.year) || 2022;
 
             let scoreText = "14.0 / 20";
-            let reliabilityLabel = "Estimation générique intelligente";
+            let reliabilityLabel = "Estimation intelligente";
             let price = "12€ - 25€";
             let food = "Viandes blanches, plats cuisinés de terroir ou charcuterie.";
-            let peak = "À consommer dans les prochaines années.";
+            let peakYears = `${yr + 2}-${yr + 6}`;
+            let peak = `À apprécier entre ${yr + 2} et ${yr + 6}.`;
 
             if (type.includes('champagne') || app.includes('champagne') || type.includes('effervescent')) {
                 scoreText = "15.5 / 20";
                 reliabilityLabel = "Estimation Bulles & Fêtes";
                 price = "25€ - 55€";
                 food = "Apéritif festif, poissons fins, fruits de mer, volailles crémées.";
-                peak = "Prêt à déguster (garde de 2 à 5 ans).";
+                peakYears = `${yr}-${yr + 4}`;
+                peak = `Prêt à déguster (garde optimale ${yr}-${yr + 4}).`;
             } else if (app.includes('bordeaux') || app.includes('bourgogne') || app.includes('rhône') || app.includes('pauillac') || app.includes('margaux') || app.includes('châteauneuf')) {
-                scoreText = "16.0 / 20";
-                reliabilityLabel = "Estimation Grand Vignoble";
-                price = "20€ - 50€";
-                food = "Viandes rouges grillées, plats en sauce, fromages affinés.";
-                peak = "Apogée estimée d'ici 2028-2030.";
+                scoreText = "16.5 / 20";
+                reliabilityLabel = "Grand Vignoble";
+                price = "25€ - 65€";
+                food = "Viandes rouges grillées, gibiers, plats en sauce mijotés, fromages affinés.";
+                peakYears = `${yr + 4}-${yr + 12}`;
+                peak = `Apogée estimée entre ${yr + 4} et ${yr + 12}.`;
             } else if (type.includes('blanc') || app.includes('sancerre') || app.includes('chablis') || app.includes('alsace')) {
-                scoreText = "14.5 / 20";
-                reliabilityLabel = "Estimation Vin Blanc Frais";
+                scoreText = "15.0 / 20";
+                reliabilityLabel = "Vin Blanc Frais";
                 price = "15€ - 30€";
                 food = "Poissons grillés, fruits de mer, fromages de chèvre, salades composées.";
-                peak = "À boire dans sa jeunesse (1 à 4 ans).";
+                peakYears = `${yr + 1}-${yr + 5}`;
+                peak = `À boire de préférence entre ${yr + 1} et ${yr + 5}.`;
             } else if (type.includes('rosé')) {
                 scoreText = "13.5 / 20";
-                reliabilityLabel = "Estimation Vin Rosé Fruité";
+                reliabilityLabel = "Vin Rosé Fruité";
                 price = "10€ - 20€";
                 food = "Barbecue, grillades d'été, cuisine méditerranéenne, apéritif.";
-                peak = "À consommer dans l'année.";
+                peakYears = `${yr}-${yr + 2}`;
+                peak = `À consommer rapidement (${yr}-${yr + 2}).`;
             }
 
-            return { scoreText, reliabilityLabel, price, food, peak };
+            return { scoreText, reliabilityLabel, price, food, peak, peakYears };
         }
 
         function updateQty(index, delta) {
@@ -530,13 +554,18 @@
 
         function openPairingAssistant() {
             switchView('pairing');
-            runPairingSearch();
         }
 
         function runPairingSearch() {
             let preset = document.getElementById('pairing-preset').value.toLowerCase();
-            let custom = document.getElementById('pairing-custom').value.toLowerCase();
+            let custom = document.getElementById('pairing-custom').value.toLowerCase().trim();
             let resultsEl = document.getElementById('pairing-results');
+
+            // Si rien n'est saisi ni sélectionné, l'écran de résultats reste vide
+            if(!preset && !custom) {
+                resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez sélectionner une catégorie ou saisir un plat ci-dessus pour lancer la recherche d'accords.</p>`;
+                return;
+            }
 
             let availableBottles = bottles.filter(b => parseInt(b.qty) > 0);
 
@@ -545,61 +574,70 @@
                 return;
             }
 
+            // Intelligence sémantique contextuelle pour la recherche manuelle et les presets
             let matches = availableBottles.map(b => {
                 let score = 0;
                 let reason = "Accord souple et agréable.";
-                let matchType = "Alternative intéressante";
+                let matchType = "Alternative possible";
                 let badgeClass = "badge-alt";
 
                 let type = b.type.toLowerCase();
                 let app = (b.appellation + " " + b.name).toLowerCase();
 
-                // Logique élargie pour inclure toutes les bouteilles de la cave avec pertinence
-                if(preset === 'viande rouge' && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('bourgogne'))) {
+                // Analyse sémantique de la recherche manuelle (ex: cassoulet, sushis, chocolat, etc.)
+                let searchTarget = preset + " " + custom;
+
+                let isRichStewOrMeat = searchTarget.includes('cassoulet') || searchTarget.includes('gibier') || searchTarget.includes('bœuf') || searchTarget.includes('viande rouge') || searchTarget.includes('carbonade') || searchTarget.includes('daube') || searchTarget.includes('magret');
+                let isFishOrSeafood = searchTarget.includes('poisson') || searchTarget.includes('sushi') || searchTarget.includes('huître') || searchTarget.includes('crustacé') || searchTarget.includes('fruits de mer') || searchTarget.includes('saumon');
+                let isCheeseOrRaclette = searchTarget.includes('fromage') || searchTarget.includes('raclette') || searchTarget.includes('fondue') || searchTarget.includes('tartiflette');
+                let isAperitifOrFestive = searchTarget.includes('aperitif') || searchTarget.includes('fête') || searchTarget.includes('coquillage');
+                let isDessertOrChocolate = searchTarget.includes('dessert') || searchTarget.includes('chocolat') || searchTarget.includes('tarte') || searchTarget.includes('sucre');
+                let isPoultryOrWhiteMeat = searchTarget.includes('volaille') || searchTarget.includes('poulet') || searchTarget.includes('veau') || searchTarget.includes('rôti');
+
+                if (isRichStewOrMeat && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('cahors') || app.includes('madiran'))) {
                     score += 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "Les tanins et la structure de ce vin s'accordent idéalement avec les viandes rouges.";
-                } else if(preset === 'volaille' && (type.includes('blanc') || type.includes('rouge') || type.includes('rosé'))) {
+                    reason = "Les tanins puissants de ce vin rouge enrobent parfaitement la richesse d'un plat en sauce ou d'un cassoulet.";
+                } else if (isFishOrSeafood && (type.includes('blanc') || type.includes('champagne') || type.includes('effervescent'))) {
+                    score += 5;
+                    matchType = "Accord Parfait";
+                    badgeClass = "badge-perfect";
+                    reason = "La fraîcheur et la minéralité subliment la iode des poissons et fruits de mer.";
+                } else if (isCheeseOrRaclette && (type.includes('rouge') || type.includes('blanc') || type.includes('savoie'))) {
                     score += 4;
                     matchType = "Très bon accord";
                     badgeClass = "badge-good";
-                    reason = "La rondeur de ce vin se marie subtilement avec la volaille.";
-                } else if(preset === 'poisson' && (type.includes('blanc') || type.includes('champagne') || type.includes('effervescent'))) {
+                    reason = "L'ampleur du vin équilibre la générosité du fromage fondu.";
+                } else if (isAperitifOrFestive && (type.includes('champagne') || type.includes('effervescent') || type.includes('rosé'))) {
                     score += 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
-                    reason = "La fraîcheur et la minéralité subliment la finesse des produits de la mer.";
-                } else if(preset === 'fromage' && (type.includes('rouge') || type.includes('blanc') || type.includes('moelleux'))) {
+                    reason = "L'effervescence et la vivacité lancent idéalement la dégustation.";
+                } else if (isDessertOrChocolate && (type.includes('moelleux') || type.includes('liquoreux') || type.includes('champagne'))) {
+                    score += 5;
+                    matchType = "Accord Parfait";
+                    badgeClass = "badge-perfect";
+                    reason = "La douceur ou l'effervescence s'accordent harmonieusement avec les notes sucrées.";
+                } else if (isPoultryOrWhiteMeat && (type.includes('blanc') || type.includes('rouge léger') || type.includes('bourgogne'))) {
                     score += 4;
                     matchType = "Très bon accord";
                     badgeClass = "badge-good";
-                    reason = "L'ampleur du vin équilibre la richesse du fromage.";
-                } else if(preset === 'aperitif' && (type.includes('champagne') || type.includes('effervescent') || type.includes('rosé') || type.includes('blanc'))) {
-                    score += 5;
-                    matchType = "Accord Parfait";
-                    badgeClass = "badge-perfect";
-                    reason = "La vivacité de cette cuvée est idéale pour lancer le repas.";
-                } else if(custom && (app.includes(custom) || type.includes(custom))) {
-                    score += 5;
-                    matchType = "Accord Personnalisé";
-                    badgeClass = "badge-perfect";
-                    reason = "Correspondance directe avec votre description.";
+                    reason = "La subtilité du vin respecte la tendreté de la volaille.";
                 } else {
-                    // Inclusion élargie de toutes les autres bouteilles pour ne jamais en afficher seulement 2
                     score += 1;
                     matchType = "Alternative possible";
                     badgeClass = "badge-alt";
-                    reason = "Une option originale à tester selon vos envies du moment.";
+                    reason = "Une option originale à tenter selon vos envies du moment.";
                 }
 
                 return { b, score, matchType, badgeClass, reason };
             });
 
-            // Tri par pertinence décroissante pour afficher TOUTES les bouteilles de la cave
+            // Tri par pertinence pour afficher toutes les bouteilles de la cave classées
             matches.sort((x, y) => y.score - x.score);
 
-            let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> de votre cave proposées pour cet accord :</p>`;
+            let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> analysées pour votre recherche :</p>`;
             
             matches.forEach(m => {
                 html += `
@@ -628,7 +666,8 @@
             }
         }
 
-        renderCave();
+        // Initialisation des filtres colorés au chargement
+        setFilter('Tous');
     </script>
 </body>
 </html>
