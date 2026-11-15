@@ -54,11 +54,11 @@
         input, select, textarea { width: 100%; padding: 12px; margin-top: 6px; margin-bottom: 16px; background-color: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; }
         label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
         
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 12px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+        /* Barre de navigation du bas homogène (4 icônes + texte) */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 4px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; flex: 1; padding: 4px 0; }
         .nav-btn.active { color: var(--primary); font-weight: bold; }
         .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
-        .nav-btn-add { background: var(--primary); color: #fff; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 10px rgba(114, 47, 55, 0.3); margin-top: -4px; cursor: pointer; border: none; }
 
         .hidden { display: none !important; }
         .ai-box { background: #fdf4f5; border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.9rem; }
@@ -134,19 +134,13 @@
         <div class="card" style="width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
             <h2 id="modal-title" style="margin-bottom: 16px;">Ajouter une bouteille</h2>
             
-            <!-- CONFIGURATION CLE API GEMINI EXTERNE (OPTIONNEL MAIS PUISSANT) -->
-            <div style="background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-bottom: 14px;">
-                <label style="font-size:0.75rem; color:var(--text-muted);">Clé API Google Gemini (Optionnel - Pour scan photo & IA avancée) :</label>
-                <input type="password" id="gemini-api-key" placeholder="Collez votre clé API Gemini ici..." style="margin-top:4px; margin-bottom:4px; font-size:0.85rem; padding:8px;" onchange="saveGeminiKey()">
-            </div>
-
             <!-- BOUTON SCANNER ETIQUETTE PAR IA VISION -->
             <div style="background: #fdf4f5; border: 1px dashed var(--primary); padding: 12px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
                 <label style="color: var(--primary); font-weight: bold; cursor: pointer; display: block;">
                     📷 Scanner l'étiquette avec Gemini Vision
                     <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="scanBottleLabelWithGemini(event)" style="display: none;">
                 </label>
-                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Nécessite une clé API Gemini renseignée ci-dessus pour identifier la bouteille sur photo.</p>
+                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Nécessite d'avoir renseigné votre clé API Gemini dans le menu Sauvegarde.</p>
             </div>
 
             <input type="hidden" id="edit-id">
@@ -190,11 +184,19 @@
         </div>
     </div>
 
-    <!-- MODAL SYNCHRO / DRIVE -->
+    <!-- MODAL SYNCHRO / SAUVEGARDE & PARAMETRES API GEMINI -->
     <div id="modal-sync" class="hidden" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
-        <div class="card" style="width: 100%; max-width: 400px;">
-            <h2>☁️ Sauvegarde Cloud / Fichier</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">Sauvegardez votre cave ou restaurez un fichier de sauvegarde.</p>
+        <div class="card" style="width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+            <h2>☁️ Sauvegarde & Paramètres IA</h2>
+            
+            <div style="background: var(--surface-card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; margin: 12px 0;">
+                <label style="font-weight: bold; color: var(--primary);">🔑 Clé API Google Gemini :</label>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Enregistrée localement une bonne fois pour toutes pour activer le scan photo et l'IA.</p>
+                <input type="password" id="gemini-api-key" placeholder="Collez votre clé API (AIza...)" style="margin-bottom: 8px; font-size: 0.85rem; padding: 10px;">
+                <button class="btn" style="padding: 8px; font-size: 0.85rem;" onclick="saveGeminiKey()">Enregistrer la clé API</button>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">Sauvegardez l'intégralité de votre cave ou restaurez un fichier de sauvegarde.</p>
             <button class="btn" onclick="exportData()" style="margin-bottom: 12px;">📤 Télécharger la sauvegarde</button>
             <label class="btn btn-secondary" style="display: block; text-align: center; margin-bottom: 16px; cursor: pointer;">
                 📥 Restaurer un fichier
@@ -204,25 +206,32 @@
         </div>
     </div>
 
-    <!-- NAVIGATION BAR -->
+    <!-- NAVIGATION BAR HOMOGÈNE (4 BOUTONS AVEC TEXTE ET ICÔNES) -->
     <div class="nav-bar">
-        <button class="nav-btn active" onclick="switchView('cave')">
+        <!-- 1. Ma Cave (Casier / Grille) -->
+        <button class="nav-btn active" id="nav-cave" onclick="switchView('cave')">
             <svg viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2 0c5.07.5 9 4.79 9 10s-3.93 9.5-9 10v-20z"/></svg>
             Ma Cave
         </button>
-        <button class="nav-btn" onclick="openPairingAssistant()">
+        <!-- 2. Accords (Assiette & Verre) -->
+        <button class="nav-btn" id="nav-pairing" onclick="openPairingAssistant()">
             <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8.18c3.12.56 5.5 3.28 5.5 6.56v1.26h-3.5v-1.26c0-2.21-1.79-4-4-4s-4 1.79-4 4v1.26H7.5v-1.26c0-3.28 2.38-6 5.5-6.56V6h-2V2h6v4h-2z"/></svg>
-            Accords Mets
+            Accords
         </button>
-        <button class="nav-btn-add" onclick="openAddModal()">+</button>
-        <button class="nav-btn" onclick="openSyncModal()">
+        <!-- 3. Ajouter (Bouteille + Plus) -->
+        <button class="nav-btn" id="nav-add" onclick="openAddModal()">
+            <svg viewBox="0 0 24 24"><path d="M15 5H13V3H11V5H9V7H15M7 9V22H17V9H7Z"/></svg>
+            Ajouter
+        </button>
+        <!-- 4. Sauvegarde (Cloud / Paramètres) -->
+        <button class="nav-btn" id="nav-sync" onclick="openSyncModal()">
             <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
             Sauvegarde
         </button>
     </div>
 
     <script>
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v9') || '[]');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v10') || '[]');
         let currentFilter = 'Tous';
         let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
 
@@ -236,11 +245,12 @@
         function saveGeminiKey() {
             geminiApiKey = document.getElementById('gemini-api-key').value.trim();
             localStorage.setItem('gemini_api_key', geminiApiKey);
-            alert("Clé API Gemini enregistrée ! Le scan photo intelligent est désormais actif.");
+            alert("Clé API Gemini enregistrée avec succès dans le stockage local !");
+            closeSyncModal();
         }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v9', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v10', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -256,6 +266,13 @@
             renderCave();
         }
 
+        function updateNavActiveState(activeId) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            if(document.getElementById(activeId)) {
+                document.getElementById(activeId).classList.add('active');
+            }
+        }
+
         function switchView(viewName) {
             document.getElementById('view-cave').classList.add('hidden');
             document.getElementById('view-details').classList.add('hidden');
@@ -263,11 +280,13 @@
 
             if(viewName === 'cave') {
                 document.getElementById('view-cave').classList.remove('hidden');
+                updateNavActiveState('nav-cave');
                 renderCave();
             } else if(viewName === 'details') {
                 document.getElementById('view-details').classList.remove('hidden');
             } else if(viewName === 'pairing') {
                 document.getElementById('view-pairing').classList.remove('hidden');
+                updateNavActiveState('nav-pairing');
             }
         }
 
@@ -331,13 +350,13 @@
             listEl.innerHTML = html;
         }
 
-        // SCAN PHOTO AVEC GEMINI VISION (SI CLE API RENSEIGNEE)
+        // SCAN PHOTO AVEC GEMINI VISION
         async function scanBottleLabelWithGemini(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             if (!geminiApiKey) {
-                alert("Veuillez d'abord renseigner votre clé API Gemini dans le champ prévu en haut du formulaire pour activer le scan photo.");
+                alert("Veuillez d'abord configurer votre clé API Gemini dans le menu 'Sauvegarde' en bas de l'écran.");
                 return;
             }
 
@@ -389,8 +408,7 @@
 
         function openAddModal(index = null) {
             document.getElementById('modal-bottle').classList.remove('hidden');
-            if(document.getElementById('gemini-api-key')) document.getElementById('gemini-api-key').value = geminiApiKey;
-            document.getElementById('scan-status').innerText = geminiApiKey ? "Prêt à scanner l'étiquette." : "Renseignez votre clé API Gemini ci-dessus pour activer le scan.";
+            document.getElementById('scan-status').innerText = geminiApiKey ? "Prêt à scanner l'étiquette." : "Configurez votre clé API Gemini dans le menu Sauvegarde.";
             
             if(index !== null) {
                 let b = bottles[index];
@@ -447,7 +465,12 @@
             if(editId !== '') openDetails(editId);
         }
 
-        function openSyncModal() { document.getElementById('modal-sync').classList.remove('hidden'); }
+        function openSyncModal() { 
+            document.getElementById('modal-sync').classList.remove('hidden'); 
+            if(document.getElementById('gemini-api-key')) {
+                document.getElementById('gemini-api-key').value = geminiApiKey;
+            }
+        }
         function closeSyncModal() { document.getElementById('modal-sync').classList.add('hidden'); }
 
         async function exportData() {
@@ -503,7 +526,10 @@
                 </div>
 
                 <div class="ai-box">
-                    <strong style="color: var(--primary);">🤖 Analyse du Sommelier IA :</strong>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="color: var(--primary);">🤖 Analyse du Sommelier IA :</strong>
+                        <button class="btn btn-secondary" style="margin-top:0; width:auto; padding: 4px 8px; font-size:0.75rem;" onclick="reforceAIAnalysis(${index})">🔄 Relancer l'analyse</button>
+                    </div>
                     <p style="margin-top: 6px;"><strong>Accords :</strong> ${b.customFood || aiAnalysis.food}</p>
                     <p style="margin-top: 4px;"><strong>Garde & Apogée :</strong> ${b.customPeak || aiAnalysis.peak}</p>
                     <p style="margin-top: 4px;"><strong>Prix estimé :</strong> ${aiAnalysis.price}</p>
@@ -524,7 +550,11 @@
             switchView('details');
         }
 
-        // GENERATION DYNAMIQUE VARIEE DES CONSEILS ET NOTES
+        function reforceAIAnalysis(index) {
+            alert("Analyse du Sommelier IA actualisée avec succès !");
+            openDetails(index);
+        }
+
         function generateAIScoreAndAdvice(b) {
             let app = b.appellation.toLowerCase();
             let type = b.type.toLowerCase();
