@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ma Cave & Sommelier IA</title>
+    <!-- Intégration de Tesseract.js pour la lecture OCR des étiquettes de vin -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary: #722f37;
@@ -81,8 +83,8 @@
         <!-- VUE CAVE -->
         <div id="view-cave">
             <div class="card" style="background: linear-gradient(135deg, #2a1f24, #1e1518); border-color: var(--accent); margin-bottom: 12px;">
-                <h3 style="color: var(--accent); margin-bottom: 4px;">🍽️ Assistant Repas</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Trouvez le vin idéal pour votre plat parmi les bouteilles en stock.</p>
+                <h3 style="color: var(--accent); margin-bottom: 4px;">🍽️ Assistant Repas Intelligent</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Trouvez l'accord parfait selon la cuisson et la sauce de votre plat.</p>
                 <button class="btn" style="background-color: var(--primary-dark); color: var(--text); border: 1px solid var(--accent); padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
@@ -115,12 +117,12 @@
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
             <div class="card">
                 <h2>Quel vin pour mon plat ?</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Choisissez une catégorie ou tapez votre plat (ex: cassoulet, sushis, magret...) :</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Tapez votre plat librement ou choisissez une catégorie, puis cliquez sur Valider :</p>
                 
-                <select id="pairing-preset" onchange="runPairingSearch()">
+                <select id="pairing-preset" onchange="clearPresetOrCustom('preset')">
                     <option value="">-- Choisir une catégorie rapide --</option>
                     <option value="viande rouge">Viande rouge / Gibier / Bœuf / Cassoulet</option>
-                    <option value="volaille">Volaille / Viande blanche / Rôti</option>
+                    <option value="volaille">Volaille / Blanquette de veau / Rôti</option>
                     <option value="poisson">Poisson / Fruits de mer / Huîtres / Sushis</option>
                     <option value="fromage">Fromages / Raclette / Tartiflette</option>
                     <option value="epice">Plats épicés / Asiatique / Curry</option>
@@ -128,10 +130,12 @@
                     <option value="dessert">Dessert / Chocolat / Tarte</option>
                 </select>
 
-                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat librement (ex: Cassoulet traditionnel...)" oninput="runPairingSearch()">
+                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat (ex: Blanquette de veau, Pavé de saumon...)" oninput="clearPresetOrCustom('custom')">
                 
+                <button class="btn" style="margin-top: 4px; margin-bottom: 16px;" onclick="runPairingSearch()">🔍 Lancer l'analyse IA de l'accord</button>
+
                 <div id="pairing-results" style="margin-top: 16px;">
-                    <!-- Résultats accord enrichis -->
+                    <p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez renseigner un plat et lancer la recherche.</p>
                 </div>
             </div>
         </div>
@@ -141,6 +145,16 @@
     <div id="modal-bottle" class="hidden" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px;">
         <div class="card" style="width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
             <h2 id="modal-title" style="margin-bottom: 16px;">Ajouter une bouteille</h2>
+            
+            <!-- BOUTON SCANNER ETIQUETTE -->
+            <div style="background: linear-gradient(135deg, #2a1f24, #3b2d35); border: 1px dashed var(--accent); padding: 12px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
+                <label style="color: var(--accent); font-weight: bold; cursor: pointer; display: block;">
+                    📷 Scanner une étiquette (Photo)
+                    <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="scanBottleLabel(event)" style="display: none;">
+                </label>
+                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Prenez en photo l'étiquette pour pré-remplir automatiquement le formulaire.</p>
+            </div>
+
             <input type="hidden" id="edit-id">
             
             <label>Nom du vin / Domaine *</label>
@@ -156,7 +170,7 @@
             </select>
 
             <label>Appellation / Région *</label>
-            <input type="text" id="b-appellation" placeholder="ex: Bordeaux, Bourgogne, Sancerre...">
+            <input type="text" id="b-appellation" placeholder="ex: Bordeaux, Bourgogne, Sancerre, Meursault...">
 
             <label>Année (laisser vide si Non Millésimé / Champagne NM)</label>
             <input type="number" id="b-year" placeholder="ex: 2018">
@@ -217,11 +231,11 @@
     </div>
 
     <script>
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v7') || '[]');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v8') || '[]');
         let currentFilter = 'Tous';
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v7', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v8', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -249,9 +263,18 @@
                 document.getElementById('view-details').classList.remove('hidden');
             } else if(viewName === 'pairing') {
                 document.getElementById('view-pairing').classList.remove('hidden');
-                document.getElementById('pairing-preset').value = '';
+            }
+        }
+
+        function clearPresetOrCostum(source) {
+            // Permet de désamorcer l'autre champ pour que la recherche soit propre
+        }
+
+        function clearPresetOrCustom(source) {
+            if(source === 'preset') {
                 document.getElementById('pairing-custom').value = '';
-                document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez sélectionner une catégorie ou saisir un plat ci-dessus pour lancer la recherche d'accords.</p>`;
+            } else {
+                document.getElementById('pairing-preset').value = '';
             }
         }
 
@@ -287,7 +310,6 @@
                 let aiAnalysis = generateAIScoreAndAdvice(b);
                 let peakDisplay = b.customPeak || aiAnalysis.peakYears;
 
-                // Détermination de la classe CSS colorée pour le type de vin
                 let typeClass = 'type-autre';
                 let typeTextClean = b.type;
                 if (b.type === 'Rouge') { typeClass = 'type-rouge'; typeTextClean = 'Rouge'; }
@@ -314,8 +336,81 @@
             listEl.innerHTML = html;
         }
 
+        async function scanBottleLabel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const statusEl = document.getElementById('scan-status');
+            statusEl.innerText = "⏳ Analyse de l'étiquette par l'IA en cours...";
+
+            try {
+                const result = await Tesseract.recognize(file, 'fra+eng', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            statusEl.innerText = `⏳ Lecture en cours (${Math.round(m.progress * 100)}%)...`;
+                        }
+                    }
+                });
+
+                const text = result.data.text;
+                console.log("OCR Extrait :", text);
+
+                // Analyse intelligente du texte extrait de l'étiquette
+                let detectedName = "";
+                let detectedAppellation = "";
+                let detectedYear = "";
+                let detectedType = "Rouge";
+
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+                if (lines.length > 0) detectedName = lines[0];
+
+                const fullTextLower = text.toLowerCase();
+
+                // Détection de l'année (4 chiffres entre 1950 et 2026)
+                const yearMatch = text.match(/\b(19[5-9]\d|20[0-2]\d)\b/);
+                if (yearMatch) {
+                    detectedYear = yearMatch[0];
+                }
+
+                // Détection du type de vin et appellations majeures
+                if (fullTextLower.includes('champagne') || fullTextLower.includes('brut') || fullTextLower.includes('effervescent')) {
+                    detectedType = "Champagne / Effervescent";
+                    detectedAppellation = "Champagne";
+                } else if (fullTextLower.includes('blanc') || fullTextLower.includes('chablis') || fullTextLower.includes('sancerre') || fullTextLower.includes('meursault') || fullTextLower.includes('chardonnay')) {
+                    detectedType = "Blanc";
+                    if (fullTextLower.includes('meursault')) detectedAppellation = "Meursault";
+                    else if (fullTextLower.includes('chablis')) detectedAppellation = "Chablis";
+                    else if (fullTextLower.includes('sancerre')) detectedAppellation = "Sancerre";
+                    else detectedAppellation = "Bourgogne Blanc";
+                } else if (fullTextLower.includes('rosé')) {
+                    detectedType = "Rosé";
+                    detectedAppellation = "Côtes de Provence";
+                } else {
+                    detectedType = "Rouge";
+                    if (fullTextLower.includes('bordeaux')) detectedAppellation = "Bordeaux";
+                    else if (fullTextLower.includes('bourgogne')) detectedAppellation = "Bourgogne";
+                    else if (fullTextLower.includes('pauillac')) detectedAppellation = "Pauillac";
+                    else if (fullTextLower.includes('margaux')) detectedAppellation = "Margaux";
+                    else if (fullTextLower.includes('rhône') || fullTextLower.includes('cotes du rhone')) detectedAppellation = "Côtes du Rhône";
+                    else detectedAppellation = lines[1] || "Appellation contrôlée";
+                }
+
+                // Pré-remplissage du formulaire
+                document.getElementById('b-name').value = detectedName || "Vin scanné";
+                document.getElementById('b-type').value = detectedType;
+                document.getElementById('b-appellation').value = detectedAppellation;
+                document.getElementById('b-year').value = detectedYear;
+
+                statusEl.innerText = "✅ Étiquette analysée et formulaires pré-remplis avec succès !";
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = "❌ Erreur de lecture. Veuillez remplir les champs manuellement.";
+            }
+        }
+
         function openAddModal(index = null) {
             document.getElementById('modal-bottle').classList.remove('hidden');
+            document.getElementById('scan-status').innerText = "Prenez en photo l'étiquette pour pré-remplir automatiquement le formulaire.";
             if(index !== null) {
                 let b = bottles[index];
                 document.getElementById('modal-title').innerText = "Modifier la bouteille";
@@ -506,6 +601,13 @@
                 food = "Apéritif festif, poissons fins, fruits de mer, volailles crémées.";
                 peakYears = `${yr}-${yr + 4}`;
                 peak = `Prêt à déguster (garde optimale ${yr}-${yr + 4}).`;
+            } else if (app.includes('meursault') || app.includes('chablis') || app.includes('sancerre') || app.includes('bourgogne blanc')) {
+                scoreText = "16.5 / 20";
+                reliabilityLabel = "Grand Blanc de Bourgogne/Loire";
+                price = "30€ - 75€";
+                food = "Poissons nobles en sauce crémée, blanquette de veau, volailles aux morilles, comté affiné.";
+                peakYears = `${yr + 3}-${yr + 10}`;
+                peak = `Apogée optimale estimée entre ${yr + 3} et ${yr + 10}.`;
             } else if (app.includes('bordeaux') || app.includes('bourgogne') || app.includes('rhône') || app.includes('pauillac') || app.includes('margaux') || app.includes('châteauneuf')) {
                 scoreText = "16.5 / 20";
                 reliabilityLabel = "Grand Vignoble";
@@ -513,7 +615,7 @@
                 food = "Viandes rouges grillées, gibiers, plats en sauce mijotés, fromages affinés.";
                 peakYears = `${yr + 4}-${yr + 12}`;
                 peak = `Apogée estimée entre ${yr + 4} et ${yr + 12}.`;
-            } else if (type.includes('blanc') || app.includes('sancerre') || app.includes('chablis') || app.includes('alsace')) {
+            } else if (type.includes('blanc') || app.includes('alsace')) {
                 scoreText = "15.0 / 20";
                 reliabilityLabel = "Vin Blanc Frais";
                 price = "15€ - 30€";
@@ -558,6 +660,9 @@
 
         function openPairingAssistant() {
             switchView('pairing');
+            document.getElementById('pairing-preset').value = '';
+            document.getElementById('pairing-custom').value = '';
+            document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez renseigner un plat et lancer la recherche.</p>`;
         }
 
         function runPairingSearch() {
@@ -566,7 +671,7 @@
             let resultsEl = document.getElementById('pairing-results');
 
             if(!preset && !custom) {
-                resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez sélectionner une catégorie ou saisir un plat ci-dessus pour lancer la recherche d'accords.</p>`;
+                alert("Veuillez sélectionner une catégorie ou saisir un plat dans la recherche.");
                 return;
             }
 
@@ -577,6 +682,9 @@
                 return;
             }
 
+            // Synthèse de la recherche combinée (Preset ou Custom pur)
+            let queryText = custom !== "" ? custom : preset;
+
             let matches = availableBottles.map(b => {
                 let score = 0;
                 let reason = "Accord souple et agréable.";
@@ -585,16 +693,26 @@
 
                 let type = b.type.toLowerCase();
                 let app = (b.appellation + " " + b.name).toLowerCase();
-                let searchTarget = preset + " " + custom;
+                let customFoodNotes = (b.customFood || "").toLowerCase();
+                let aiAnalysis = generateAIScoreAndAdvice(b);
+                let aiFoodNotes = aiAnalysis.food.toLowerCase();
 
-                let isRichStewOrMeat = searchTarget.includes('cassoulet') || searchTarget.includes('gibier') || searchTarget.includes('bœuf') || searchTarget.includes('viande rouge') || searchTarget.includes('carbonade') || searchTarget.includes('daube') || searchTarget.includes('magret');
-                let isFishOrSeafood = searchTarget.includes('poisson') || searchTarget.includes('sushi') || searchTarget.includes('huître') || searchTarget.includes('crustacé') || searchTarget.includes('fruits de mer') || searchTarget.includes('saumon');
-                let isCheeseOrRaclette = searchTarget.includes('fromage') || searchTarget.includes('raclette') || searchTarget.includes('fondue') || searchTarget.includes('tartiflette');
-                let isAperitifOrFestive = searchTarget.includes('aperitif') || searchTarget.includes('fête') || searchTarget.includes('coquillage');
-                let isDessertOrChocolate = searchTarget.includes('dessert') || searchTarget.includes('chocolat') || searchTarget.includes('tarte') || searchTarget.includes('sucre');
-                let isPoultryOrWhiteMeat = searchTarget.includes('volaille') || searchTarget.includes('poulet') || searchTarget.includes('veau') || searchTarget.includes('rôti');
+                // Moteur sémantique ultra-fin croisant la requête, les notes perso et l'analyse IA de la bouteille
+                let isCreamyOrBlanquette = queryText.includes('blanquette') || queryText.includes('crème') || queryText.includes('morille') || queryText.includes('veau en sauce');
+                let isRichMeatOrStew = queryText.includes('cassoulet') || queryText.includes('gibier') || queryText.includes('bœuf') || queryText.includes('viande rouge') || queryText.includes('carbonade') || queryText.includes('daube') || queryText.includes('magret');
+                let isFishOrSeafood = queryText.includes('poisson') || queryText.includes('sushi') || queryText.includes('huître') || queryText.includes('crustacé') || queryText.includes('fruits de mer') || queryText.includes('saumon');
+                let isCheeseOrRaclette = queryText.includes('fromage') || queryText.includes('raclette') || queryText.includes('fondue') || queryText.includes('tartiflette');
+                let isAperitifOrFestive = queryText.includes('aperitif') || queryText.includes('fête') || queryText.includes('coquillage');
+                let isDessertOrChocolate = queryText.includes('dessert') || queryText.includes('chocolat') || queryText.includes('tarte') || queryText.includes('sucre');
+                let isPoultryOrWhiteMeat = queryText.includes('volaille') || queryText.includes('poulet') || queryText.includes('veau') || queryText.includes('rôti');
 
-                if (isRichStewOrMeat && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('cahors') || app.includes('madiran'))) {
+                // Logique ciblée sur Meursault et grands blancs pour les plats crémés (Blanquette)
+                if (isCreamyOrBlanquette && (app.includes('meursault') || app.includes('bourgogne blanc') || app.includes('chablis') || type.includes('blanc'))) {
+                    score += 6;
+                    matchType = "Accord Parfait";
+                    badgeClass = "badge-perfect";
+                    reason = "La rondeur beurrée et la vivacité d'un grand vin blanc (type Meursault ou Bourgogne) épousent somptueusement la sauce crémeuse et la texture fondante de la blanquette.";
+                } else if (isRichMeatOrStew && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('cahors') || app.includes('madiran'))) {
                     score += 5;
                     matchType = "Accord Parfait";
                     badgeClass = "badge-perfect";
@@ -624,6 +742,11 @@
                     matchType = "Très bon accord";
                     badgeClass = "badge-good";
                     reason = "La subtilité du vin respecte la tendreté de la volaille.";
+                } else if (customFoodNotes.includes(queryText) || aiFoodNotes.includes(queryText)) {
+                    score += 4;
+                    matchType = "Très bon accord";
+                    badgeClass = "badge-good";
+                    reason = "Correspondance détectée directement dans les notes et recommandations de la bouteille.";
                 } else {
                     score += 1;
                     matchType = "Alternative possible";
@@ -636,7 +759,7 @@
 
             matches.sort((x, y) => y.score - x.score);
 
-            let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> analysées pour votre recherche :</p>`;
+            let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> analysées pour « <i>${queryText}</i> » :</p>`;
             
             matches.forEach(m => {
                 html += `
