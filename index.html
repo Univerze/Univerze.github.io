@@ -247,12 +247,11 @@
     </div>
 
     <script>
-        // Migration douce des données existantes depuis v14 vers v15 si nécessaire
-        let existingV14 = localStorage.getItem('my_wine_cellar_v14');
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v15') || existingV14 || '[]');
+        let existingV15 = localStorage.getItem('my_wine_cellar_v15');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v16') || existingV15 || '[]');
         let currentFilter = 'Tous';
         let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
-        const GEMINI_MODEL = 'gemini-2.5-flash';
+        const GEMINI_MODEL = 'gemini-3.8-flash';
 
         document.addEventListener("DOMContentLoaded", () => {
             if(document.getElementById('gemini-api-key')) {
@@ -269,7 +268,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v15', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v16', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -340,7 +339,6 @@
                 let badgeClass = b.year ? 'badge' : 'badge badge-nm';
                 let userNoteDisplay = (b.userNote !== undefined && b.userNote !== '') ? `⭐ ${b.userNote}/20` : '';
                 
-                // Utilise la vraie donnée sauvegardée de Gemini si disponible
                 let peakDisplay = b.customPeak || (b.aiProfile && b.aiProfile.apogee) || 'À analyser';
                 let hasRealAI = Boolean(b.aiProfile);
 
@@ -371,7 +369,6 @@
             listEl.innerHTML = html;
         }
 
-        // EXTRACTION JSON ROBUSTE (tolère le texte autour ou les balises markdown)
         function extractJsonFromText(text) {
             const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
             const firstBrace = cleaned.indexOf('{');
@@ -382,7 +379,6 @@
             return JSON.parse(cleaned);
         }
 
-        // APPEL GEMINI API (avec recherche Google activée pour fiches techniques & prix réels)
         async function callGeminiAPI(parts, useSearch = true) {
             if (!geminiApiKey) {
                 throw new Error("Clé API Gemini manquante. Configurez-la dans l'onglet Sauvegarde.");
@@ -420,7 +416,6 @@
             return extractJsonFromText(textParts);
         }
 
-        // GENERE LA FICHE SOMMELIER COMPLETE COMME CHATGPT
         async function fetchFullSommelierProfile(bottle) {
             const prompt = `Tu es un maître sommelier expert. Recherche les informations exactes et la fiche technique réelle du producteur pour ce vin :
 - Nom / Producteur / Cuvée : "${bottle.name}"
@@ -492,7 +487,6 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
             });
         }
 
-        // SCAN PHOTO AVEC GEMINI VISION
         async function scanBottleLabelWithGemini(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -836,7 +830,6 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
             document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Renseignez un plat pour analyser votre cave avec Gemini.</p>`;
         }
 
-        // ASSISTANT D'ACCORDS PROPULSE PAR GEMINI
         async function runPairingSearch() {
             let preset = document.getElementById('pairing-preset').value.trim();
             let custom = document.getElementById('pairing-custom').value.trim();
