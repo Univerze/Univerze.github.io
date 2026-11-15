@@ -42,6 +42,7 @@
         .badge-note { background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
         .badge-peak { background-color: #fae8ff; color: #86198f; border-color: #f5d0fe; }
         .badge-ai-ok { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .badge-format { background-color: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
         
         .type-rouge { color: #dc2626; font-weight: bold; }
         .type-blanc { color: #ca8a04; font-weight: bold; }
@@ -177,6 +178,12 @@
                 <option value="Autres">Autres</option>
             </select>
 
+            <label>Format *</label>
+            <select id="b-format">
+                <option value="Bouteille">Bouteille (75cl)</option>
+                <option value="Demi-bouteille">Demi-bouteille (37,5cl)</option>
+            </select>
+
             <label>Appellation / Région *</label>
             <input type="text" id="b-appellation" placeholder="ex: AOC Alsace, Meursault, Bordeaux...">
 
@@ -247,8 +254,8 @@
     </div>
 
     <script>
-        let existingV16 = localStorage.getItem('my_wine_cellar_v16');
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v17') || existingV16 || '[]');
+        let existingV17 = localStorage.getItem('my_wine_cellar_v17');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v18') || existingV17 || '[]');
         let currentFilter = 'Tous';
         let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
         const GEMINI_MODEL = 'gemini-3.8-flash';
@@ -268,7 +275,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v17', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v18', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -279,6 +286,11 @@
                 return type;
             }
             return 'Autres';
+        }
+
+        function normalizeBottleFormat(format) {
+            if (format === 'Demi-bouteille') return 'Demi-bouteille';
+            return 'Bouteille';
         }
 
         function setFilter(filterType) {
@@ -341,6 +353,7 @@
             let html = '';
             bottles.forEach((b, index) => {
                 let normType = normalizeBottleType(b.type);
+                let normFormat = normalizeBottleFormat(b.format);
                 let matchesFilter = (currentFilter === 'Tous') || 
                                     (currentFilter === 'Autres' && normType === 'Autres') ||
                                     (normType === currentFilter);
@@ -367,6 +380,7 @@
                             <p><span class="${typeClass}">${typeTextClean}</span> • ${b.appellation}</p>
                             <div style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
                                 <span class="${badgeClass}">${yearDisplay}</span>
+                                <span class="badge badge-format">${normFormat}</span>
                                 <span class="badge" style="background:#f1f5f9;">Qté: ${b.qty}</span>
                                 <span class="badge badge-peak">⏳ ${peakDisplay}</span>
                                 ${hasRealAI ? `<span class="badge badge-ai-ok">✨ Fiche IA</span>` : ''}
@@ -461,10 +475,11 @@
                 const prompt = `Tu es un maître sommelier expert. Recherche les informations exactes et la fiche technique réelle du producteur pour ce vin :
 - Nom / Producteur / Cuvée : "${bottle.name}"
 - Type : "${bottle.type}"
+- Format : "${bottle.format}" (si c'est une demi-bouteille, mentionne l'impact de ce format sur la dégustation ou la garde si pertinent)
 - Appellation / Région : "${bottle.appellation}"
 - Millésime : "${bottle.year || 'Non millésimé'}"
 
-Utilise la recherche Google pour vérifier le vrai prix public du domaine, la sucrosité exacte (sec, demi-sec, moelleux, liquoreux), le degré d'alcool, le cépage et la garde réelle conseillée par le producteur.
+Utilise la recherche Google pour vérifier le vrai prix public du domaine, la sucrosité exacte, le degré d'alcool, le cépage et la garde réelle conseillée par le producteur.
 
 Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette structure exacte :
 {
@@ -472,7 +487,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
   "cepage": "Cépage(s) principal(aux)",
   "note_ia": "Note réaliste sur 20 (ex: 14.5 / 20)",
   "qualification": "Qualification courte",
-  "profil_intro": "Description précise du style du vin (incluant s'il est sec, demi-sec, moelleux ou liquoreux)",
+  "profil_intro": "Description précise du style du vin",
   "aromes": ["Arôme 1", "Arôme 2", "Arôme 3", "Arôme 4"],
   "garde_conseillee": "Durée en années",
   "apogee": "Fourchette d'années exacte",
@@ -484,7 +499,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
   ],
   "autres_accords": "Autres idées d'accords",
   "fiche_technique": {
-    "style": "Style (ex: Blanc sec, Blanc moelleux, Blanc liquoreux...)",
+    "style": "Style",
     "alcool": "Alcool",
     "sucre_residuel": "Sucre",
     "service": "Service",
@@ -550,7 +565,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 const prompt = `Analyse cette étiquette de bouteille de vin. Renvoie STRICTEMENT un objet JSON valide avec ces 4 clés :
 {
   "name": "Producteur + Nom de cuvée + Cépage si indiqué",
-  "type": "Uniquement l'une de ces valeurs : Rouge, Blanc, Rosé, Champagne / Effervescent, Autres (note : les vins blancs moelleux et liquoreux doivent impérativement être classés dans Blanc)",
+  "type": "Uniquement l'une de ces valeurs : Rouge, Blanc, Rosé, Champagne / Effervescent, Autres",
   "appellation": "Appellation ou région exacte",
   "year": "Millésime à 4 chiffres ou chaîne vide si absent"
 }`;
@@ -568,7 +583,6 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 statusEl.innerText = "✅ Étiquette reconnue ! Cliquez sur Enregistrer.";
             } catch (err) {
                 console.warn(err);
-                // Secours visuel si l'API photo échoue
                 document.getElementById('b-name').value = "Bouteille scannée";
                 document.getElementById('b-appellation').value = "France / Région";
                 statusEl.innerText = "⚠️ API surchargée : formulaire pré-rempli (modifiez si besoin).";
@@ -585,6 +599,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 document.getElementById('edit-id').value = index;
                 document.getElementById('b-name').value = b.name;
                 document.getElementById('b-type').value = normalizeBottleType(b.type);
+                document.getElementById('b-format').value = normalizeBottleFormat(b.format);
                 document.getElementById('b-appellation').value = b.appellation;
                 document.getElementById('b-year').value = b.year || '';
                 document.getElementById('b-qty').value = b.qty || 1;
@@ -596,6 +611,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 document.getElementById('edit-id').value = '';
                 document.getElementById('b-name').value = '';
                 document.getElementById('b-type').value = 'Rouge';
+                document.getElementById('b-format').value = 'Bouteille';
                 document.getElementById('b-appellation').value = '';
                 document.getElementById('b-year').value = '';
                 document.getElementById('b-qty').value = '1';
@@ -612,6 +628,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
         async function saveBottle() {
             let name = document.getElementById('b-name').value.trim();
             let type = normalizeBottleType(document.getElementById('b-type').value);
+            let format = normalizeBottleFormat(document.getElementById('b-format').value);
             let appellation = document.getElementById('b-appellation').value.trim();
             let year = document.getElementById('b-year').value.trim();
             let qty = parseInt(document.getElementById('b-qty').value) || 1;
@@ -626,7 +643,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
             }
 
             let existingProfile = (editId !== '' && bottles[editId]) ? bottles[editId].aiProfile : null;
-            let bottleData = { name, type, appellation, year, qty, userNote, customFood, customPeak, aiProfile: existingProfile };
+            let bottleData = { name, type, format, appellation, year, qty, userNote, customFood, customPeak, aiProfile: existingProfile };
 
             const saveBtn = document.getElementById('btn-save-bottle');
             if (!existingProfile) {
@@ -692,6 +709,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
         function openDetails(index) {
             let b = bottles[index];
             let displayType = normalizeBottleType(b.type);
+            let displayFormat = normalizeBottleFormat(b.format);
             let yearDisplay = b.year ? b.year : 'Non millésimé';
             let p = b.aiProfile;
 
@@ -756,6 +774,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                     <div class="ai-section">
                         <h4>4. Caractéristiques techniques</h4>
                         <table class="tech-table">
+                            <tr><td>Format</td><td>${displayFormat}</td></tr>
                             <tr><td>Type / Sucrosité</td><td>${ft.style || displayType}</td></tr>
                             <tr><td>Alcool</td><td>${ft.alcool || 'N/C'}</td></tr>
                             <tr><td>Sucre résiduel</td><td>${ft.sucre_residuel || 'N/C'}</td></tr>
@@ -800,8 +819,11 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
             let content = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div>
-                        <span class="badge">${displayType}</span>
-                        <h2 style="margin-top: 8px;">${b.name}</h2>
+                        <div style="display:flex; gap:6px; margin-bottom:4px;">
+                            <span class="badge">${displayType}</span>
+                            <span class="badge badge-format">${displayFormat}</span>
+                        </div>
+                        <h2 style="margin-top: 4px;">${b.name}</h2>
                         <p style="color: var(--text-muted);">${b.appellation} • ${yearDisplay}</p>
                     </div>
                     <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-top:0;" onclick="openAddModal(${index})">✏️ Modifier</button>
@@ -810,7 +832,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 ${aiHtml}
 
                 <div style="background: var(--surface-card); padding: 12px; border-radius: 8px; margin-top: 16px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border);">
-                    <div style="font-size: 0.9rem; font-weight: bold;">En stock : ${b.qty} bouteille(s)</div>
+                    <div style="font-size: 0.9rem; font-weight: bold;">En stock : ${b.qty} unité(s)</div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn" style="padding: 6px 14px; font-size: 0.95rem;" onclick="updateQty(${index}, 1)">+</button>
                         <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.95rem; margin-top:0;" onclick="updateQty(${index}, -1)">-</button>
@@ -895,6 +917,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                     index: i,
                     nom: b.name,
                     type: normalizeBottleType(b.type),
+                    format: normalizeBottleFormat(b.format),
                     appellation: b.appellation,
                     annee: b.year || 'NM',
                     stock: b.qty
@@ -921,12 +944,11 @@ Renvoie STRICTEMENT un objet JSON valide :
                 try {
                     data = await callGeminiAPI([{ text: prompt }], false);
                 } catch(e) {
-                    // Secours local pour les accords si l'API est surchargée
                     data = {
                         recommendations: availableBottles.map(b => ({
                             nom: b.name,
                             niveau: "Très bon accord",
-                            explication: `La structure et le profil de ce ${normalizeBottleType(b.type).toLowerCase()} s'associeront harmonieusement avec ${queryText}.`
+                            explication: `La structure et le profil de ce ${normalizeBottleType(b.type).toLowerCase()} (${normalizeBottleFormat(b.format).toLowerCase()}) s'associeront harmonieusement avec ${queryText}.`
                         }))
                     };
                 }
@@ -937,6 +959,7 @@ Renvoie STRICTEMENT un objet JSON valide :
                     let b = availableBottles.find(item => item.name.toLowerCase() === r.nom.toLowerCase()) || availableBottles[0];
                     let badgeClass = r.niveau === 'Accord Parfait' ? 'badge-perfect' : (r.niveau === 'Très bon accord' ? 'badge-good' : 'badge-alt');
                     let safeName = b.name.replace(/'/g, "\\'");
+                    let fmt = normalizeBottleFormat(b.format);
 
                     html += `
                         <div class="card" style="background: var(--surface); margin-bottom: 10px; border-left: 4px solid var(--primary);">
@@ -944,9 +967,9 @@ Renvoie STRICTEMENT un objet JSON valide :
                                 <strong>${b.name}</strong>
                                 <span class="badge ${badgeClass}" style="white-space:nowrap;">${r.niveau}</span>
                             </div>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${normalizeBottleType(b.type)} • ${b.appellation} (${b.year || 'NM'}) • Stock : ${b.qty}</p>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${normalizeBottleType(b.type)} • ${fmt} • ${b.appellation} (${b.year || 'NM'}) • Stock : ${b.qty}</p>
                             <p style="font-size: 0.88rem; margin-top: 8px; line-height:1.4;">💡 ${r.explication}</p>
-                            <button class="btn" style="margin-top: 10px; padding: 8px; font-size: 0.85rem;" onclick="openBottleTonight('${safeName}')">Ouvrir 1 bouteille ce soir 🍾</button>
+                            <button class="btn" style="margin-top: 10px; padding: 8px; font-size: 0.85rem;" onclick="openBottleTonight('${safeName}')">Ouvrir 1 unité ce soir 🍾</button>
                         </div>
                     `;
                 });
@@ -964,7 +987,7 @@ Renvoie STRICTEMENT un objet JSON valide :
             if(b && b.qty > 0) {
                 b.qty -= 1;
                 saveToStorage();
-                alert(`Bonne dégustation ! Il reste ${b.qty} bouteille(s) de ${b.name} dans votre cave.`);
+                alert(`Bonne dégustation ! Il reste ${b.qty} unité(s) de ${b.name} dans votre cave.`);
                 runPairingSearch();
             }
         }
