@@ -26,21 +26,29 @@
         .btn-secondary { background-color: var(--surface-card); color: var(--text); border: 1px solid var(--border); box-shadow: none; margin-top: 10px; }
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         
-        /* Filtres de tri colorés sur la page d'accueil */
+        /* Filtres de tri neutres sur la page d'accueil */
         .filter-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
         .filter-container::-webkit-scrollbar { display: none; }
         .filter-chip { background: var(--surface-card); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
-        .filter-chip.active { font-weight: bold; }
+        .filter-chip.active { background: var(--primary); color: var(--accent); border-color: var(--accent); font-weight: bold; }
 
         .bottle-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .bottle-item:last-child { border-bottom: none; }
         .bottle-info h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 4px; }
         .bottle-info p { font-size: 0.85rem; color: var(--text-muted); }
+        
         .badge { background-color: var(--primary-dark); color: var(--accent); padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; border: 1px solid var(--border); }
         .badge-nm { background-color: #3b2d35; color: #f3e8ff; }
         .badge-note { background-color: #1e293b; color: #38bdf8; border-color: #0369a1; }
         .badge-peak { background-color: #2e1065; color: #c084fc; border-color: #6b21a8; }
         
+        /* Codes couleurs pour les types de vins dans l'inventaire */
+        .type-rouge { color: #ef4444; font-weight: bold; }
+        .type-blanc { color: #facc15; font-weight: bold; }
+        .type-rose { color: #f472b6; font-weight: bold; }
+        .type-champagne { color: #fbbf24; font-weight: bold; }
+        .type-autre { color: #a78bfa; font-weight: bold; }
+
         /* Codes couleurs pour les accords */
         .badge-perfect { background-color: #064e3b; color: #34d399; border-color: #059669; }
         .badge-good { background-color: #1e3a8a; color: #60a5fa; border-color: #2563eb; }
@@ -78,14 +86,14 @@
                 <button class="btn" style="background-color: var(--primary-dark); color: var(--text); border: 1px solid var(--accent); padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
-            <!-- Filtres rapides par type de vin colorés -->
+            <!-- Filtres rapides par type de vin -->
             <div class="filter-container" id="filter-chips">
                 <div class="filter-chip active" onclick="setFilter('Tous')">Tous</div>
-                <div class="filter-chip" style="color: #ef4444; border-color: #ef4444;" onclick="setFilter('Rouge')">🔴 Rouge</div>
-                <div class="filter-chip" style="color: #facc15; border-color: #facc15;" onclick="setFilter('Blanc')">🟡 Blanc</div>
-                <div class="filter-chip" style="color: #f472b6; border-color: #f472b6;" onclick="setFilter('Rosé')">🌸 Rosé</div>
-                <div class="filter-chip" style="color: #fbbf24; border-color: #fbbf24;" onclick="setFilter('Champagne / Effervescent')">✨ Champagne</div>
-                <div class="filter-chip" style="color: #a78bfa; border-color: #a78bfa;" onclick="setFilter('Autres')">📦 Autres</div>
+                <div class="filter-chip" onclick="setFilter('Rouge')">Rouge</div>
+                <div class="filter-chip" onclick="setFilter('Blanc')">Blanc</div>
+                <div class="filter-chip" onclick="setFilter('Rosé')">Rosé</div>
+                <div class="filter-chip" onclick="setFilter('Champagne / Effervescent')">Champagne</div>
+                <div class="filter-chip" onclick="setFilter('Autres')">Autres</div>
             </div>
 
             <h2>Mon Inventaire (<span id="bottle-count">0</span>)</h2>
@@ -209,31 +217,21 @@
     </div>
 
     <script>
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v6') || '[]');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v7') || '[]');
         let currentFilter = 'Tous';
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v6', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v7', JSON.stringify(bottles));
             renderCave();
         }
 
         function setFilter(filterType) {
             currentFilter = filterType;
             document.querySelectorAll('.filter-chip').forEach(chip => {
-                let text = chip.innerText.replace(/[🔴🟡🌸✨📦]/g, '').trim();
-                if(text.toLowerCase() === filterType.toLowerCase() || (filterType === 'Tous' && text === 'Tous')) {
+                if(chip.innerText.toLowerCase() === filterType.toLowerCase() || (filterType === 'Tous' && chip.innerText === 'Tous')) {
                     chip.classList.add('active');
-                    chip.style.backgroundColor = 'var(--primary)';
-                    chip.style.color = 'var(--accent)';
                 } else {
                     chip.classList.remove('active');
-                    chip.style.backgroundColor = 'var(--surface-card)';
-                    if(text === 'Rouge') chip.style.color = '#ef4444';
-                    else if(text === 'Blanc') chip.style.color = '#facc15';
-                    else if(text === 'Rosé') chip.style.color = '#f472b6';
-                    else if(text === 'Champagne') chip.style.color = '#fbbf24';
-                    else if(text === 'Autres') chip.style.color = '#a78bfa';
-                    else chip.style.color = 'var(--text-muted)';
                 }
             });
             renderCave();
@@ -251,7 +249,6 @@
                 document.getElementById('view-details').classList.remove('hidden');
             } else if(viewName === 'pairing') {
                 document.getElementById('view-pairing').classList.remove('hidden');
-                // S'assure que la recherche est vide à l'ouverture
                 document.getElementById('pairing-preset').value = '';
                 document.getElementById('pairing-custom').value = '';
                 document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez sélectionner une catégorie ou saisir un plat ci-dessus pour lancer la recherche d'accords.</p>`;
@@ -287,15 +284,22 @@
                 let badgeClass = b.year ? 'badge' : 'badge badge-nm';
                 let userNoteDisplay = (b.userNote !== undefined && b.userNote !== '') ? `⭐ ${b.userNote}/20` : '';
                 
-                // Calcul de la garde visible directement sur l'accueil
                 let aiAnalysis = generateAIScoreAndAdvice(b);
                 let peakDisplay = b.customPeak || aiAnalysis.peakYears;
+
+                // Détermination de la classe CSS colorée pour le type de vin
+                let typeClass = 'type-autre';
+                let typeTextClean = b.type;
+                if (b.type === 'Rouge') { typeClass = 'type-rouge'; typeTextClean = 'Rouge'; }
+                else if (b.type === 'Blanc') { typeClass = 'type-blanc'; typeTextClean = 'Blanc'; }
+                else if (b.type === 'Rosé') { typeClass = 'type-rose'; typeTextClean = 'Rosé'; }
+                else if (b.type.includes('Champagne')) { typeClass = 'type-champagne'; typeTextClean = 'Champagne'; }
 
                 html += `
                     <div class="bottle-item" onclick="openDetails(${index})">
                         <div class="bottle-info">
                             <h3>${b.name}</h3>
-                            <p>${b.type} • ${b.appellation}</p>
+                            <p><span class="${typeClass}">${typeTextClean}</span> • ${b.appellation}</p>
                             <div style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
                                 <span class="${badgeClass}">${yearDisplay}</span>
                                 <span class="badge" style="background:#2a1f24;">Qté: ${b.qty}</span>
@@ -561,7 +565,6 @@
             let custom = document.getElementById('pairing-custom').value.toLowerCase().trim();
             let resultsEl = document.getElementById('pairing-results');
 
-            // Si rien n'est saisi ni sélectionné, l'écran de résultats reste vide
             if(!preset && !custom) {
                 resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez sélectionner une catégorie ou saisir un plat ci-dessus pour lancer la recherche d'accords.</p>`;
                 return;
@@ -574,7 +577,6 @@
                 return;
             }
 
-            // Intelligence sémantique contextuelle pour la recherche manuelle et les presets
             let matches = availableBottles.map(b => {
                 let score = 0;
                 let reason = "Accord souple et agréable.";
@@ -583,8 +585,6 @@
 
                 let type = b.type.toLowerCase();
                 let app = (b.appellation + " " + b.name).toLowerCase();
-
-                // Analyse sémantique de la recherche manuelle (ex: cassoulet, sushis, chocolat, etc.)
                 let searchTarget = preset + " " + custom;
 
                 let isRichStewOrMeat = searchTarget.includes('cassoulet') || searchTarget.includes('gibier') || searchTarget.includes('bœuf') || searchTarget.includes('viande rouge') || searchTarget.includes('carbonade') || searchTarget.includes('daube') || searchTarget.includes('magret');
@@ -634,7 +634,6 @@
                 return { b, score, matchType, badgeClass, reason };
             });
 
-            // Tri par pertinence pour afficher toutes les bouteilles de la cave classées
             matches.sort((x, y) => y.score - x.score);
 
             let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> analysées pour votre recherche :</p>`;
@@ -666,7 +665,6 @@
             }
         }
 
-        // Initialisation des filtres colorés au chargement
         setFilter('Tous');
     </script>
 </body>
