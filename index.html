@@ -23,6 +23,7 @@
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
         .btn { background-color: var(--primary); color: #fff; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; font-size: 1rem; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(114, 47, 55, 0.2); transition: transform 0.1s; }
         .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-secondary { background-color: var(--surface-card); color: var(--text); border: 1px solid var(--border); box-shadow: none; margin-top: 10px; }
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
@@ -33,13 +34,14 @@
 
         .bottle-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; }
         .bottle-item:last-child { border-bottom: none; }
-        .bottle-info h3 { font-size: 1.1rem; color: var(--text); margin-bottom: 4px; }
+        .bottle-info h3 { font-size: 1.05rem; color: var(--text); margin-bottom: 4px; }
         .bottle-info p { font-size: 0.85rem; color: var(--text-muted); }
         
         .badge { background-color: #f1f5f9; color: var(--primary); padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; border: 1px solid var(--border); font-weight: 600; }
         .badge-nm { background-color: #fef3c7; color: #92400e; }
         .badge-note { background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
         .badge-peak { background-color: #fae8ff; color: #86198f; border-color: #f5d0fe; }
+        .badge-ai-ok { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
         
         .type-rouge { color: #dc2626; font-weight: bold; }
         .type-blanc { color: #ca8a04; font-weight: bold; }
@@ -60,9 +62,27 @@
         .nav-btn svg { width: 22px; height: 22px; fill: currentColor; }
 
         .hidden { display: none !important; }
-        .ai-box { background: #fdf4f5; border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 0.9rem; }
-        .score-row { display: flex; gap: 10px; margin-top: 10px; }
-        .score-box { flex: 1; background: var(--surface-card); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+        .ai-section { background: #fdf8f8; border: 1px solid #f3e1e3; padding: 14px; border-radius: 12px; margin-top: 12px; font-size: 0.9rem; line-height: 1.45; }
+        .ai-section h4 { color: var(--primary); font-size: 0.95rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .ai-list { padding-left: 18px; margin: 6px 0; color: var(--text); }
+        .ai-list li { margin-bottom: 4px; }
+        
+        .tech-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.85rem; }
+        .tech-table td { padding: 7px 4px; border-bottom: 1px solid var(--border); }
+        .tech-table tr:last-child td { border-bottom: none; }
+        .tech-table td:first-child { color: var(--text-muted); width: 42%; }
+        .tech-table td:last-child { font-weight: 600; text-align: right; color: var(--text); }
+
+        .garde-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0; }
+        .garde-item { background: #ffffff; border: 1px solid var(--border); padding: 10px; border-radius: 10px; }
+        .garde-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: bold; }
+        .garde-val { font-size: 1.05rem; font-weight: bold; color: #15803d; margin-top: 2px; }
+
+        .price-highlight { background: #ffffff; border: 1px solid var(--border); padding: 12px; border-radius: 10px; text-align: center; }
+        .price-main { font-size: 1.35rem; font-weight: bold; color: #15803d; }
+
+        .score-row { display: flex; gap: 10px; margin-top: 12px; }
+        .score-box { flex: 1; background: var(--surface-card); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
         .score-value { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
     </style>
 </head>
@@ -76,8 +96,8 @@
         <!-- VUE CAVE -->
         <div id="view-cave">
             <div class="card" style="background: linear-gradient(135deg, #fff5f5, #ffffff); border-color: var(--border); margin-bottom: 12px;">
-                <h3 style="color: var(--primary); margin-bottom: 4px;">🍽️ Assistant Repas Intelligent</h3>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Trouvez l'accord parfait selon la cuisson et la sauce de votre plat.</p>
+                <h3 style="color: var(--primary); margin-bottom: 4px;">🍽️ Assistant Repas Sommelier IA</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Gemini analyse votre plat et sélectionne les meilleures bouteilles de votre cave.</p>
                 <button class="btn" style="padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
@@ -105,24 +125,25 @@
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
             <div class="card">
                 <h2>Quel vin pour mon plat ?</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Tapez votre plat librement (ex: blanquette de veau, sushis, magret...) :</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Décrivez votre plat (cuisson, sauce, accompagnement) pour une analyse réelle de votre stock :</p>
                 
                 <select id="pairing-preset" onchange="clearPresetOrCustom('preset')">
                     <option value="">-- Choisir une catégorie rapide --</option>
-                    <option value="viande rouge">Viande rouge / Gibier / Bœuf / Cassoulet</option>
-                    <option value="volaille">Volaille / Blanquette de veau / Rôti</option>
-                    <option value="poisson">Poisson / Fruits de mer / Huîtres / Sushis</option>
-                    <option value="fromage">Fromages / Raclette / Tartiflette</option>
-                    <option value="epice">Plats épicés / Asiatique / Curry</option>
-                    <option value="aperitif">Apéritif / Festif / Champagne</option>
-                    <option value="dessert">Dessert / Chocolat / Tarte</option>
+                    <option value="Viande rouge grillée ou en sauce / Gibier / Cassoulet">Viande rouge / Gibier / Bœuf / Cassoulet</option>
+                    <option value="Volaille à la crème / Blanquette de veau / Rôti">Volaille à la crème / Blanquette de veau / Rôti</option>
+                    <option value="Poisson en sauce / Fruits de mer / Huîtres / Sushis">Poisson / Fruits de mer / Huîtres / Sushis</option>
+                    <option value="Foie gras / Canard aux figues / Plat sucré-salé">Foie gras / Canard / Sucré-salé</option>
+                    <option value="Plateau de fromages / Raclette / Tartiflette">Fromages / Raclette / Tartiflette</option>
+                    <option value="Plats épicés / Cuisine asiatique / Curry">Plats épicés / Asiatique / Curry</option>
+                    <option value="Apéritif dînatoire / Occasion festive">Apéritif / Festif</option>
+                    <option value="Dessert fruité / Chocolat / Tarte">Dessert / Chocolat / Tarte</option>
                 </select>
 
-                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat précisément..." oninput="clearPresetOrCustom('custom')">
-                <button class="btn" style="margin-bottom: 16px;" onclick="runPairingSearch()">🔍 Lancer l'analyse IA de l'accord</button>
+                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat précisément (ex: bar au beurre blanc)..." oninput="clearPresetOrCustom('custom')">
+                <button class="btn" id="btn-run-pairing" style="margin-bottom: 16px;" onclick="runPairingSearch()">🔍 Demander au Sommelier IA</button>
 
                 <div id="pairing-results" style="margin-top: 16px;">
-                    <p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez renseigner un plat et lancer la recherche.</p>
+                    <p style="color: var(--text-muted); text-align:center; padding: 20px;">Renseignez un plat pour analyser votre cave avec Gemini.</p>
                 </div>
             </div>
         </div>
@@ -139,13 +160,13 @@
                     📷 Scanner l'étiquette avec Gemini Vision
                     <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="scanBottleLabelWithGemini(event)" style="display: none;">
                 </label>
-                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Analyse en direct par Gemini Vision.</p>
+                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Reconnaissance photo + fiche complète automatique.</p>
             </div>
 
             <input type="hidden" id="edit-id">
             
-            <label>Nom du vin / Domaine *</label>
-            <input type="text" id="b-name" placeholder="ex: Château Margaux">
+            <label>Nom du vin / Domaine / Cuvée *</label>
+            <input type="text" id="b-name" placeholder="ex: Cave de Beblenheim - Pinot Gris Prestige">
 
             <label>Type de vin *</label>
             <select id="b-type">
@@ -157,10 +178,10 @@
             </select>
 
             <label>Appellation / Région *</label>
-            <input type="text" id="b-appellation" placeholder="ex: Meursault, Bordeaux, Sancerre...">
+            <input type="text" id="b-appellation" placeholder="ex: AOC Alsace, Meursault, Bordeaux...">
 
             <label>Année (laisser vide si Non Millésimé)</label>
-            <input type="number" id="b-year" placeholder="ex: 2018">
+            <input type="number" id="b-year" placeholder="ex: 2025">
 
             <label>Quantité en stock</label>
             <input type="number" id="b-qty" value="1" min="0">
@@ -169,15 +190,15 @@
             <input type="number" id="b-user-note" step="0.5" min="0" max="20" placeholder="ex: 15.5">
 
             <div style="background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
-                <h4 style="color: var(--primary); font-size: 0.9rem; margin-bottom: 8px;">Notes & Conseils personnels (Optionnel)</h4>
+                <h4 style="color: var(--primary); font-size: 0.9rem; margin-bottom: 8px;">Notes personnelles (Optionnel - sinon généré par l'IA)</h4>
                 <label>À boire avec :</label>
-                <input type="text" id="b-custom-food" placeholder="ex: Entrecôte grillée">
+                <input type="text" id="b-custom-food" placeholder="Laisser vide pour l'analyse IA">
                 <label>Garde / Apogée :</label>
-                <input type="text" id="b-custom-peak" placeholder="ex: 2026-2030">
+                <input type="text" id="b-custom-peak" placeholder="Laisser vide pour l'analyse IA">
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button class="btn" onclick="saveBottle()">Enregistrer</button>
+                <button class="btn" id="btn-save-bottle" onclick="saveBottle()">Enregistrer & Analyser</button>
                 <button class="btn btn-secondary" onclick="closeModal()" style="margin-top:0;">Annuler</button>
             </div>
         </div>
@@ -190,12 +211,12 @@
             
             <div style="background: var(--surface-card); border: 1px solid var(--border); padding: 12px; border-radius: 10px; margin: 12px 0;">
                 <label style="font-weight: bold; color: var(--primary);">🔑 Clé API Google Gemini :</label>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Enregistrée localement pour activer le scan photo et l'IA.</p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Indispensable pour l'analyse des fiches vins, les prix réels et le scan photo.</p>
                 <input type="password" id="gemini-api-key" placeholder="Collez votre clé API (AIza...)" style="margin-bottom: 8px; font-size: 0.85rem; padding: 10px;">
                 <button class="btn" style="padding: 8px; font-size: 0.85rem;" onclick="saveGeminiKey()">Enregistrer la clé API</button>
             </div>
 
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">Sauvegardez l'intégralité de votre cave ou restaurez un fichier de sauvegarde.</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 12px 0;">Sauvegardez l'intégralité de votre cave (avec les fiches IA) ou restaurez un fichier.</p>
             <button class="btn" onclick="exportData()" style="margin-bottom: 12px;">📤 Télécharger la sauvegarde</button>
             <label class="btn btn-secondary" style="display: block; text-align: center; margin-bottom: 16px; cursor: pointer;">
                 📥 Restaurer un fichier
@@ -226,9 +247,12 @@
     </div>
 
     <script>
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v14') || '[]');
+        // Migration douce des données existantes depuis v14 vers v15 si nécessaire
+        let existingV14 = localStorage.getItem('my_wine_cellar_v14');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v15') || existingV14 || '[]');
         let currentFilter = 'Tous';
         let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
+        const GEMINI_MODEL = 'gemini-2.5-flash';
 
         document.addEventListener("DOMContentLoaded", () => {
             if(document.getElementById('gemini-api-key')) {
@@ -245,7 +269,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v14', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v15', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -316,8 +340,9 @@
                 let badgeClass = b.year ? 'badge' : 'badge badge-nm';
                 let userNoteDisplay = (b.userNote !== undefined && b.userNote !== '') ? `⭐ ${b.userNote}/20` : '';
                 
-                let aiAnalysis = generateAIScoreAndAdvice(b);
-                let peakDisplay = b.customPeak || aiAnalysis.peakYears;
+                // Utilise la vraie donnée sauvegardée de Gemini si disponible
+                let peakDisplay = b.customPeak || (b.aiProfile && b.aiProfile.apogee) || 'À analyser';
+                let hasRealAI = Boolean(b.aiProfile);
 
                 let typeClass = 'type-autre';
                 let typeTextClean = b.type;
@@ -335,6 +360,7 @@
                                 <span class="${badgeClass}">${yearDisplay}</span>
                                 <span class="badge" style="background:#f1f5f9;">Qté: ${b.qty}</span>
                                 <span class="badge badge-peak">⏳ ${peakDisplay}</span>
+                                ${hasRealAI ? `<span class="badge badge-ai-ok">✨ Fiche IA</span>` : ''}
                                 ${userNoteDisplay ? `<span class="badge badge-note">${userNoteDisplay}</span>` : ''}
                             </div>
                         </div>
@@ -345,7 +371,98 @@
             listEl.innerHTML = html;
         }
 
-        // REDIMENSIONNEMENT IMAGE POUR EVITER LES ERREURS DE PAYLOAD MEMOIRE MOBILE
+        // EXTRACTION JSON ROBUSTE (tolère le texte autour ou les balises markdown)
+        function extractJsonFromText(text) {
+            const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const firstBrace = cleaned.indexOf('{');
+            const lastBrace = cleaned.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                return JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+            }
+            return JSON.parse(cleaned);
+        }
+
+        // APPEL GEMINI API (avec recherche Google activée pour fiches techniques & prix réels)
+        async function callGeminiAPI(parts, useSearch = true) {
+            if (!geminiApiKey) {
+                throw new Error("Clé API Gemini manquante. Configurez-la dans l'onglet Sauvegarde.");
+            }
+
+            const payload = {
+                contents: [{ parts: parts }]
+            };
+
+            if (useSearch) {
+                payload.tools = [{ google_search: {} }];
+            }
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiApiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Erreur API (${response.status}) : ${errText}`);
+            }
+
+            const data = await response.json();
+            if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                throw new Error("Réponse vide renvoyée par Gemini.");
+            }
+
+            const textParts = data.candidates[0].content.parts
+                .filter(p => p.text)
+                .map(p => p.text)
+                .join('\n');
+
+            return extractJsonFromText(textParts);
+        }
+
+        // GENERE LA FICHE SOMMELIER COMPLETE COMME CHATGPT
+        async function fetchFullSommelierProfile(bottle) {
+            const prompt = `Tu es un maître sommelier expert. Recherche les informations exactes et la fiche technique réelle du producteur pour ce vin :
+- Nom / Producteur / Cuvée : "${bottle.name}"
+- Type : "${bottle.type}"
+- Appellation / Région : "${bottle.appellation}"
+- Millésime : "${bottle.year || 'Non millésimé'}"
+
+Utilise la recherche Google pour vérifier le vrai prix public du domaine, la sucrosité exacte (sec, demi-sec, moelleux), le degré d'alcool, le cépage et la garde réelle conseillée par le producteur (ne surestime pas la garde d'un vin accessible à boire jeune !).
+
+Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette structure exacte :
+{
+  "producteur": "Nom exact du domaine ou cave",
+  "cepage": "Cépage(s) principal(aux)",
+  "note_ia": "Note réaliste sur 20 (ex: 14.5 / 20)",
+  "qualification": "Qualification courte (ex: Vin blanc d'Alsace accessible et gourmand)",
+  "profil_intro": "Description précise du style du vin, de sa structure, de sa sucrosité et de son équilibre",
+  "aromes": ["Arôme 1", "Arôme 2", "Arôme 3", "Arôme 4"],
+  "garde_conseillee": "Durée en années (ex: 2 à 4 ans)",
+  "apogee": "Fourchette d'années exacte (ex: 2026-2028)",
+  "conseil_garde": "Explication précise sur quand le boire et comment le conserver",
+  "accords": [
+    {"plat": "Nom du plat 1", "detail": "Pourquoi cet accord fonctionne"},
+    {"plat": "Nom du plat 2", "detail": "Pourquoi cet accord fonctionne"},
+    {"plat": "Nom du plat 3", "detail": "Pourquoi cet accord fonctionne"},
+    {"plat": "Nom du plat 4", "detail": "Pourquoi cet accord fonctionne"}
+  ],
+  "autres_accords": "Autres idées d'accords en une phrase",
+  "fiche_technique": {
+    "style": "Ex: Blanc demi-sec, Rouge charpenté...",
+    "alcool": "Ex: 12,5 %",
+    "sucre_residuel": "Ex: 11 g/L ou Sec (< 2 g/L)",
+    "service": "Ex: 8 à 12 °C",
+    "terroir": "Type de sol / terroir"
+  },
+  "prix_public": "Prix constaté précis (ex: 8,30 € ou 15 €)",
+  "fourchette_prix": "Estimation de valeur (ex: 8 à 10 € la bouteille)",
+  "avis_sommelier": "Conclusion honnête et concrète sur le positionnement du vin et le meilleur moment pour l'ouvrir"
+}`;
+
+            return await callGeminiAPI([{ text: prompt }], true);
+        }
+
         function resizeImage(file, maxWidth = 1024, maxHeight = 1024) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -356,92 +473,72 @@
                     img.onload = () => {
                         let width = img.width;
                         let height = img.height;
-                        if (width > height) {
-                            if (width > maxWidth) {
-                                height *= maxWidth / width;
-                                width = maxWidth;
-                            }
-                        } else {
-                            if (height > maxHeight) {
-                                width *= maxHeight / height;
-                                height = maxHeight;
-                            }
+                        if (width > height && width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        } else if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
                         }
                         const canvas = document.createElement('canvas');
                         canvas.width = width;
                         canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.82));
                     };
-                    img.onerror = error => reject(error);
+                    img.onerror = reject;
                 };
-                reader.onerror = error => reject(error);
+                reader.onerror = reject;
             });
         }
 
-        // SCAN PHOTO AVEC LE NOUVEAU MODÈLE GEMINI 3.8 FLASH
+        // SCAN PHOTO AVEC GEMINI VISION
         async function scanBottleLabelWithGemini(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const statusEl = document.getElementById('scan-status');
-
             if (!geminiApiKey) {
-                statusEl.innerText = "❌ Clé API absente. Saisissez-la dans le menu Sauvegarde.";
-                alert("Veuillez d'abord configurer votre clé API Gemini dans le menu 'Sauvegarde' en bas de l'écran.");
+                statusEl.innerText = "❌ Clé API absente. Configurez-la dans Sauvegarde.";
+                alert("Veuillez d'abord renseigner votre clé API Gemini dans le menu 'Sauvegarde'.");
                 return;
             }
 
-            statusEl.innerText = "⏳ Optimisation de l'image et analyse Gemini Vision...";
+            statusEl.innerText = "⏳ Lecture de l'étiquette par Gemini Vision...";
 
             try {
                 const resizedDataUrl = await resizeImage(file, 1024, 1024);
                 const cleanBase64 = resizedDataUrl.split(',')[1];
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${geminiApiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: "Analyse cette étiquette de vin. Renvoie STRICTEMENT un objet JSON valide avec ces 4 clés exactes, sans texte autour ni balises markdown : {\"name\": \"Nom du domaine ou cuvée\", \"type\": \"Rouge ou Blanc ou Rosé ou Champagne / Effervescent\", \"appellation\": \"Appellation ou région précise\", \"year\": \"Année à 4 chiffres ou vide si non millésimé\"}" },
-                                { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
-                            ]
-                        }]
-                    })
-                });
+                const prompt = `Analyse cette étiquette de bouteille de vin. Renvoie STRICTEMENT un objet JSON valide avec ces 4 clés :
+{
+  "name": "Producteur + Nom de cuvée + Cépage si indiqué (ex: Cave de Beblenheim - Pinot Gris Prestige)",
+  "type": "Uniquement l'une de ces valeurs : Rouge, Blanc, Rosé, Champagne / Effervescent, Moelleux / Liquoreux",
+  "appellation": "Appellation ou région exacte (ex: AOC Alsace)",
+  "year": "Millésime à 4 chiffres ou chaîne vide si absent"
+}`;
 
-                if (!response.ok) {
-                    const errorDetails = await response.text();
-                    throw new Error(`HTTP ${response.status} : ${errorDetails}`);
-                }
-
-                const data = await response.json();
-                if (!data.candidates || !data.candidates[0].content) {
-                    throw new Error("Aucune réponse valide reçue de Gemini.");
-                }
-
-                const textResp = data.candidates[0].content.parts[0].text;
-                const jsonClean = textResp.replace(/```json/g, '').replace(/```/g, '').trim();
-                const parsed = JSON.parse(jsonClean);
+                const parsed = await callGeminiAPI([
+                    { text: prompt },
+                    { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
+                ], false);
 
                 document.getElementById('b-name').value = parsed.name || "";
                 document.getElementById('b-type').value = parsed.type || "Rouge";
                 document.getElementById('b-appellation').value = parsed.appellation || "";
                 document.getElementById('b-year').value = parsed.year || "";
 
-                statusEl.innerText = "✅ Étiquette reconnue et analysée par Gemini avec succès !";
+                statusEl.innerText = "✅ Étiquette reconnue ! Cliquez sur Enregistrer pour générer la fiche IA complète.";
             } catch (err) {
-                console.error("Erreur Gemini Vision :", err);
-                statusEl.innerText = "❌ Erreur Gemini (voir alerte)";
-                alert(`Échec de l'analyse Gemini :\n${err.message}\n\nVérifiez votre clé API sur aistudio.google.com.`);
+                console.error(err);
+                statusEl.innerText = "❌ Échec de la lecture photo.";
+                alert(`Erreur Gemini Vision :\n${err.message}`);
             }
         }
 
         function openAddModal(index = null) {
             document.getElementById('modal-bottle').classList.remove('hidden');
-            document.getElementById('scan-status').innerText = geminiApiKey ? "Prêt à scanner l'étiquette avec Gemini Vision." : "Configurez votre clé API Gemini dans le menu Sauvegarde.";
+            document.getElementById('scan-status').innerText = geminiApiKey ? "Prêt à scanner l'étiquette avec Gemini Vision." : "Configurez votre clé API Gemini dans Sauvegarde.";
             
             if(index !== null) {
                 let b = bottles[index];
@@ -473,7 +570,7 @@
             document.getElementById('modal-bottle').classList.add('hidden');
         }
 
-        function saveBottle() {
+        async function saveBottle() {
             let name = document.getElementById('b-name').value.trim();
             let type = document.getElementById('b-type').value;
             let appellation = document.getElementById('b-appellation').value.trim();
@@ -489,13 +586,36 @@
                 return;
             }
 
-            let bottleData = { name, type, appellation, year, qty, userNote, customFood, customPeak };
-            if(editId !== '') bottles[editId] = bottleData;
-            else bottles.push(bottleData);
+            let existingProfile = (editId !== '' && bottles[editId]) ? bottles[editId].aiProfile : null;
+            let bottleData = { name, type, appellation, year, qty, userNote, customFood, customPeak, aiProfile: existingProfile };
+
+            const saveBtn = document.getElementById('btn-save-bottle');
+            if (geminiApiKey && !existingProfile) {
+                saveBtn.disabled = true;
+                saveBtn.innerText = "⏳ Recherche fiche producteur IA...";
+                try {
+                    bottleData.aiProfile = await fetchFullSommelierProfile(bottleData);
+                } catch (err) {
+                    console.error(err);
+                    alert(`La bouteille est enregistrée, mais l'analyse IA a échoué :\n${err.message}`);
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = "Enregistrer & Analyser";
+                }
+            }
+
+            let targetIndex;
+            if(editId !== '') {
+                bottles[editId] = bottleData;
+                targetIndex = parseInt(editId);
+            } else {
+                bottles.push(bottleData);
+                targetIndex = bottles.length - 1;
+            }
 
             saveToStorage();
             closeModal();
-            if(editId !== '') openDetails(editId);
+            openDetails(targetIndex);
         }
 
         function openSyncModal() { 
@@ -534,7 +654,109 @@
         function openDetails(index) {
             let b = bottles[index];
             let yearDisplay = b.year ? b.year : 'Non millésimé';
-            let aiAnalysis = generateAIScoreAndAdvice(b);
+            let p = b.aiProfile;
+
+            let aiHtml = '';
+            if (p) {
+                let aromesHtml = (p.aromes || []).map(a => `<li>${a}</li>`).join('');
+                let accordsHtml = (p.accords || []).map(acc => `
+                    <div style="background:#fff; border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:8px;">
+                        <strong style="color:var(--text);">${acc.plat}</strong>
+                        <p style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">${acc.detail}</p>
+                    </div>
+                `).join('');
+                let ft = p.fiche_technique || {};
+
+                aiHtml = `
+                    <div class="score-row">
+                        <div class="score-box">
+                            <div style="font-size:0.75rem; color:var(--text-muted);">NOTE SOMMELIER IA</div>
+                            <div class="score-value">${p.note_ia || 'N/A'}</div>
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${p.qualification || ''}</div>
+                        </div>
+                        <div class="score-box">
+                            <div style="font-size:0.75rem; color:var(--text-muted);">MA NOTE</div>
+                            <div class="score-value">${(b.userNote !== undefined && b.userNote !== '') ? b.userNote + '/20' : 'Non noté'}</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+                        <strong style="color:var(--primary); font-size:0.95rem;">🍷 Fiche de dégustation IA</strong>
+                        <button id="btn-reanalyze" class="btn btn-secondary" style="margin-top:0; width:auto; padding: 6px 10px; font-size:0.78rem;" onclick="reforceAIAnalysis(${index})">🔄 Actualiser l'analyse IA</button>
+                    </div>
+
+                    <div class="ai-section">
+                        <h4>1. Profil du vin</h4>
+                        ${p.producteur ? `<p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:6px;"><strong>Producteur :</strong> ${p.producteur} • <strong>Cépage :</strong> ${p.cepage || 'N/C'}</p>` : ''}
+                        <p>${p.profil_intro || ''}</p>
+                        ${aromesHtml ? `<ul class="ai-list">${aromesHtml}</ul>` : ''}
+                    </div>
+
+                    <div class="ai-section">
+                        <h4>2. Garde et apogée</h4>
+                        <div class="garde-grid">
+                            <div class="garde-item">
+                                <div class="garde-label">Garde conseillée</div>
+                                <div class="garde-val">${p.garde_conseillee || 'N/C'}</div>
+                            </div>
+                            <div class="garde-item">
+                                <div class="garde-label">Apogée estimée</div>
+                                <div class="garde-val">${b.customPeak || p.apogee || 'N/C'}</div>
+                            </div>
+                        </div>
+                        <p style="font-size:0.85rem; margin-top:6px;">${p.conseil_garde || ''}</p>
+                    </div>
+
+                    <div class="ai-section">
+                        <h4>3. Accords mets-vins</h4>
+                        ${b.customFood ? `<p style="margin-bottom:8px;"><strong>Votre note personnelle :</strong> ${b.customFood}</p>` : ''}
+                        ${accordsHtml}
+                        ${p.autres_accords ? `<p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;"><strong>Autres possibilités :</strong> ${p.autres_accords}</p>` : ''}
+                    </div>
+
+                    <div class="ai-section">
+                        <h4>4. Caractéristiques techniques</h4>
+                        <table class="tech-table">
+                            <tr><td>Type / Sucrosité</td><td>${ft.style || b.type}</td></tr>
+                            <tr><td>Alcool</td><td>${ft.alcool || 'N/C'}</td></tr>
+                            <tr><td>Sucre résiduel</td><td>${ft.sucre_residuel || 'N/C'}</td></tr>
+                            <tr><td>Service</td><td>${ft.service || 'N/C'}</td></tr>
+                            <tr><td>Terroir</td><td>${ft.terroir || 'N/C'}</td></tr>
+                        </table>
+                    </div>
+
+                    <div class="ai-section">
+                        <h4>5. Prix estimé</h4>
+                        <div class="price-highlight">
+                            <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:bold;">Prix public constaté</div>
+                            <div class="price-main">${p.prix_public || 'N/C'}</div>
+                            <div style="font-size:0.85rem; font-weight:600; margin-top:4px;">${p.fourchette_prix || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="ai-section" style="background:#fff5f5; border-left: 4px solid var(--primary);">
+                        <h4>💡 L'avis du Sommelier</h4>
+                        <p>${p.avis_sommelier || ''}</p>
+                    </div>
+                `;
+            } else {
+                aiHtml = `
+                    <div class="score-row">
+                        <div class="score-box">
+                            <div style="font-size:0.75rem; color:var(--text-muted);">ANALYSE IA</div>
+                            <div class="score-value" style="font-size:0.95rem;">Non générée</div>
+                        </div>
+                        <div class="score-box">
+                            <div style="font-size:0.75rem; color:var(--text-muted);">MA NOTE</div>
+                            <div class="score-value">${(b.userNote !== undefined && b.userNote !== '') ? b.userNote + '/20' : 'Non noté'}</div>
+                        </div>
+                    </div>
+                    <div class="ai-section" style="text-align:center;">
+                        <p style="margin-bottom:10px;">Aucune fiche Gemini n'a encore été générée pour cette bouteille.</p>
+                        <button id="btn-reanalyze" class="btn" onclick="reforceAIAnalysis(${index})">✨ Générer la fiche complète avec Gemini</button>
+                    </div>
+                `;
+            }
 
             let content = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
@@ -546,33 +768,13 @@
                     <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-top:0;" onclick="openAddModal(${index})">✏️ Modifier</button>
                 </div>
 
-                <div class="score-row">
-                    <div class="score-box">
-                        <div style="font-size:0.75rem; color:var(--text-muted);">NOTE SOMMELIER IA</div>
-                        <div class="score-value">${aiAnalysis.scoreText}</div>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${aiAnalysis.reliabilityLabel}</div>
-                    </div>
-                    <div class="score-box">
-                        <div style="font-size:0.75rem; color:var(--text-muted);">MA NOTE</div>
-                        <div class="score-value">${(b.userNote !== undefined && b.userNote !== '') ? b.userNote + '/20' : 'Non noté'}</div>
-                    </div>
-                </div>
+                ${aiHtml}
 
-                <div class="ai-box">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <strong style="color: var(--primary);">🤖 Analyse du Sommelier IA :</strong>
-                        <button class="btn btn-secondary" style="margin-top:0; width:auto; padding: 4px 8px; font-size:0.75rem;" onclick="reforceAIAnalysis(${index})">🔄 Relancer l'analyse</button>
-                    </div>
-                    <p style="margin-top: 6px;"><strong>Accords :</strong> ${b.customFood || aiAnalysis.food}</p>
-                    <p style="margin-top: 4px;"><strong>Garde & Apogée :</strong> ${b.customPeak || aiAnalysis.peak}</p>
-                    <p style="margin-top: 4px;"><strong>Prix estimé :</strong> ${aiAnalysis.price}</p>
-                </div>
-
-                <div style="background: var(--surface-card); padding: 12px; border-radius: 8px; margin-top: 12px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border);">
+                <div style="background: var(--surface-card); padding: 12px; border-radius: 8px; margin-top: 16px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border);">
                     <div style="font-size: 0.9rem; font-weight: bold;">En stock : ${b.qty} bouteille(s)</div>
                     <div style="display:flex; gap:8px;">
-                        <button class="btn" style="padding: 6px 12px; font-size: 0.9rem;" onclick="updateQty(${index}, 1)">+</button>
-                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.9rem; margin-top:0;" onclick="updateQty(${index}, -1)">-</button>
+                        <button class="btn" style="padding: 6px 14px; font-size: 0.95rem;" onclick="updateQty(${index}, 1)">+</button>
+                        <button class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.95rem; margin-top:0;" onclick="updateQty(${index}, -1)">-</button>
                     </div>
                 </div>
 
@@ -583,61 +785,28 @@
             switchView('details');
         }
 
-        function reforceAIAnalysis(index) {
-            alert("Analyse du Sommelier IA actualisée avec succès !");
-            openDetails(index);
-        }
-
-        function generateAIScoreAndAdvice(b) {
-            let app = b.appellation.toLowerCase();
-            let type = b.type.toLowerCase();
-            let yr = parseInt(b.year) || 2021;
-
-            let scoreText = "14.5 / 20";
-            let reliabilityLabel = "Estimation Vignoble de Caractère";
-            let price = "14€ - 28€";
-            let food = `Plats régionaux de ${b.appellation}, viandes blanches rôties ou charcuterie fine.`;
-            let peakYears = `${yr + 3}-${yr + 7}`;
-            let peak = `À apprécier entre ${yr + 3} et ${yr + 7} pour profiter de son fruité.`;
-
-            if (type.includes('champagne') || app.includes('champagne') || type.includes('effervescent')) {
-                scoreText = "15.5 / 20";
-                reliabilityLabel = "Cuvée Effervescente";
-                price = "28€ - 60€";
-                food = "Apéritif dînatoire, coquillages, poissons fins ou volailles crémées.";
-                peakYears = `${yr}-${yr + 5}`;
-                peak = `Prêt à déguster (garde optimale ${yr}-${yr + 5}).`;
-            } else if (app.includes('meursault') || app.includes('chablis') || app.includes('sancerre') || app.includes('bourgogne blanc')) {
-                scoreText = "17.0 / 20";
-                reliabilityLabel = "Grand Blanc de Garde";
-                price = "32€ - 80€";
-                food = "Poissons nobles au beurre blanc, blanquette de veau aux morilles, fromages de chèvre affinés.";
-                peakYears = `${yr + 4}-${yr + 12}`;
-                peak = `Apogée complexe estimée entre ${yr + 4} et ${yr + 12}.`;
-            } else if (app.includes('bordeaux') || app.includes('pauillac') || app.includes('margaux') || app.includes('saint-émilion')) {
-                scoreText = "16.5 / 20";
-                reliabilityLabel = "Grand Cru Classé / Rive Gauche-Droite";
-                price = "25€ - 90€";
-                food = "Côte de bœuf maturée, agneau de sept heures, gibier à plume ou fromages corsés.";
-                peakYears = `${yr + 5}-${yr + 15}`;
-                peak = `En pleine plénitude entre ${yr + 5} et ${yr + 15}.`;
-            } else if (app.includes('rhône') || app.includes('châteauneuf') || app.includes('côte-rôtie')) {
-                scoreText = "16.0 / 20";
-                reliabilityLabel = "Vallée du Rhône Epicée";
-                price = "22€ - 70€";
-                food = "Daube de bœuf provençale, magret de canard aux épices, côtes d'agneau grillées.";
-                peakYears = `${yr + 4}-${yr + 10}`;
-                peak = `Apogée idéale entre ${yr + 4} et ${yr + 10}.`;
-            } else if (type.includes('rosé')) {
-                scoreText = "13.5 / 20";
-                reliabilityLabel = "Rosé Fruité & Frais";
-                price = "10€ - 22€";
-                food = "Barbecue estival, salades composées, cuisine méditerranéenne ou tapas.";
-                peakYears = `${yr}-${yr + 2}`;
-                peak = `À consommer rapidement dans sa jeunesse (${yr}-${yr + 2}).`;
+        async function reforceAIAnalysis(index) {
+            if (!geminiApiKey) {
+                alert("Veuillez d'abord enregistrer votre clé API Gemini dans l'onglet Sauvegarde.");
+                return;
             }
-
-            return { scoreText, reliabilityLabel, price, food, peak, peakYears };
+            const btn = document.getElementById('btn-reanalyze');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "⏳ Analyse Gemini en cours...";
+            }
+            try {
+                bottles[index].aiProfile = await fetchFullSommelierProfile(bottles[index]);
+                saveToStorage();
+                openDetails(index);
+            } catch (err) {
+                console.error(err);
+                alert(`Erreur lors de l'analyse Gemini :\n${err.message}`);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "🔄 Réessayer l'analyse IA";
+                }
+            }
         }
 
         function updateQty(index, delta) {
@@ -664,16 +833,24 @@
             switchView('pairing');
             document.getElementById('pairing-preset').value = '';
             document.getElementById('pairing-custom').value = '';
-            document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Veuillez renseigner un plat et lancer la recherche.</p>`;
+            document.getElementById('pairing-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Renseignez un plat pour analyser votre cave avec Gemini.</p>`;
         }
 
-        function runPairingSearch() {
-            let preset = document.getElementById('pairing-preset').value.toLowerCase();
-            let custom = document.getElementById('pairing-custom').value.toLowerCase().trim();
+        // ASSISTANT D'ACCORDS PROPULSE PAR GEMINI
+        async function runPairingSearch() {
+            let preset = document.getElementById('pairing-preset').value.trim();
+            let custom = document.getElementById('pairing-custom').value.trim();
             let resultsEl = document.getElementById('pairing-results');
+            let btn = document.getElementById('btn-run-pairing');
 
-            if(!preset && !custom) {
+            let queryText = custom !== "" ? custom : preset;
+            if(!queryText) {
                 alert("Veuillez sélectionner une catégorie ou saisir un plat.");
+                return;
+            }
+
+            if (!geminiApiKey) {
+                alert("Veuillez d'abord renseigner votre clé API Gemini dans l'onglet Sauvegarde.");
                 return;
             }
 
@@ -683,76 +860,73 @@
                 return;
             }
 
-            let queryText = custom !== "" ? custom : preset;
+            btn.disabled = true;
+            btn.innerText = "⏳ Le Sommelier IA analyse votre cave...";
+            resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Analyse de vos ${availableBottles.length} référence(s) en stock pour « ${queryText} »...</p>`;
 
-            let matches = availableBottles.map(b => {
-                let score = 1;
-                let reason = "Alternative originale à découvrir.";
-                let matchType = "Alternative possible";
-                let badgeClass = "badge-alt";
+            try {
+                const cellarSummary = availableBottles.map((b, i) => ({
+                    index: i,
+                    nom: b.name,
+                    type: b.type,
+                    appellation: b.appellation,
+                    annee: b.year || 'NM',
+                    stock: b.qty,
+                    style_ia: b.aiProfile?.fiche_technique?.style || '',
+                    apogee_ia: b.aiProfile?.apogee || ''
+                }));
 
-                let type = b.type.toLowerCase();
-                let app = (b.appellation + " " + b.name).toLowerCase();
+                const prompt = `Tu es un maître sommelier. L'utilisateur va manger : "${queryText}".
+Voici les bouteilles actuellement en stock dans sa cave :
+${JSON.stringify(cellarSummary)}
 
-                let isBlanquetteOrCream = queryText.includes('blanquette') || queryText.includes('crème') || queryText.includes('morille') || queryText.includes('veau en sauce');
-                let isRedMeat = queryText.includes('bœuf') || queryText.includes('viande rouge') || queryText.includes('cassoulet') || queryText.includes('gibier') || queryText.includes('magret');
-                let isFish = queryText.includes('poisson') || queryText.includes('sushi') || queryText.includes('huître') || queryText.includes('saumon') || queryText.includes('mer');
-                let isCheese = queryText.includes('fromage') || queryText.includes('raclette') || queryText.includes('tartiflette');
-                let isAperitif = queryText.includes('apéritif') || queryText.includes('fête');
-                let isDessert = queryText.includes('dessert') || queryText.includes('chocolat') || queryText.includes('tarte');
+Classe les bouteilles de la cave de la plus pertinente à la moins pertinente pour ce plat (garde les meilleures options, jusqu'à 5 maximum). Tiens compte de la sucrosité réelle (ex: un Pinot Gris demi-sec est exceptionnel sur un foie gras, un canard aux figues ou une volaille à la crème, mais moins adapté à des huîtres crues).
 
-                if (isBlanquetteOrCream && (app.includes('meursault') || app.includes('bourgogne blanc') || app.includes('chablis') || type.includes('blanc'))) {
-                    score = 6;
-                    matchType = "Accord Parfait";
-                    badgeClass = "badge-perfect";
-                    reason = "La rondeur beurrée et la minéralité de ce blanc élégant épousent à la perfection la texture fondante et la sauce crémée.";
-                } else if (isRedMeat && (type.includes('rouge') || app.includes('bordeaux') || app.includes('rhône') || app.includes('pauillac'))) {
-                    score = 5;
-                    matchType = "Accord Parfait";
-                    badgeClass = "badge-perfect";
-                    reason = "La structure tannique et l'ampleur de ce vin rouge enrobent idéalement la puissance du plat.";
-                } else if (isFish && (type.includes('blanc') || type.includes('champagne') || type.includes('effervescent'))) {
-                    score = 5;
-                    matchType = "Accord Parfait";
-                    badgeClass = "badge-perfect";
-                    reason = "La fraîcheur saline et la vivacité de la cuvée subliment la finesse iodée.";
-                } else if (isCheese && (type.includes('rouge') || type.includes('blanc'))) {
-                    score = 4;
-                    matchType = "Très bon accord";
-                    badgeClass = "badge-good";
-                    reason = "L'équilibre du vin tempère la générosité du fromage.";
-                } else if (isAperitif && (type.includes('champagne') || type.includes('effervescent') || type.includes('rosé'))) {
-                    score = 5;
-                    matchType = "Accord Parfait";
-                    badgeClass = "badge-perfect";
-                    reason = "L'effervescence pétillante et fruitée ouvre l'appétit avec brio.";
-                } else if (isDessert && (type.includes('moelleux') || type.includes('liquoreux') || type.includes('champagne'))) {
-                    score = 5;
-                    matchType = "Accord Parfait";
-                    badgeClass = "badge-perfect";
-                    reason = "L'accord gourmand par excellence avec la douceur du dessert.";
+Renvoie STRICTEMENT un objet JSON valide :
+{
+  "recommendations": [
+    {
+      "nom": "Nom exact de la bouteille tel que fourni",
+      "niveau": "Accord Parfait" ou "Très bon accord" ou "Alternative possible",
+      "explication": "Explication gastronomique précise (sauce, texture, équilibre acide/sucre/tanins)"
+    }
+  ]
+}`;
+
+                const data = await callGeminiAPI([{ text: prompt }], false);
+                const recs = data.recommendations || [];
+
+                if (recs.length === 0) {
+                    resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Aucune recommandation trouvée.</p>`;
+                    return;
                 }
 
-                return { b, score, matchType, badgeClass, reason };
-            });
+                let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Sélection du Sommelier IA pour « <b>${queryText}</b> » :</p>`;
+                recs.forEach(r => {
+                    let b = availableBottles.find(item => item.name.toLowerCase() === r.nom.toLowerCase()) || availableBottles[0];
+                    let badgeClass = r.niveau === 'Accord Parfait' ? 'badge-perfect' : (r.niveau === 'Très bon accord' ? 'badge-good' : 'badge-alt');
+                    let safeName = b.name.replace(/'/g, "\\'");
 
-            matches.sort((x, y) => y.score - x.score);
-
-            let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>${matches.length} bouteille(s)</b> analysées pour « <i>${queryText}</i> » :</p>`;
-            matches.forEach(m => {
-                html += `
-                    <div class="card" style="background: var(--surface); margin-bottom: 10px; border-left: 4px solid var(--primary);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong>${m.b.name}</strong>
-                            <span class="badge ${m.badgeClass}">${m.matchType}</span>
+                    html += `
+                        <div class="card" style="background: var(--surface); margin-bottom: 10px; border-left: 4px solid var(--primary);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                                <strong>${b.name}</strong>
+                                <span class="badge ${badgeClass}" style="white-space:nowrap;">${r.niveau}</span>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${b.type} • ${b.appellation} (${b.year || 'NM'}) • Stock : ${b.qty}</p>
+                            <p style="font-size: 0.88rem; margin-top: 8px; line-height:1.4;">💡 ${r.explication}</p>
+                            <button class="btn" style="margin-top: 10px; padding: 8px; font-size: 0.85rem;" onclick="openBottleTonight('${safeName}')">Ouvrir 1 bouteille ce soir 🍾</button>
                         </div>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${m.b.type} • ${m.b.appellation} (Stock : ${m.b.qty})</p>
-                        <p style="font-size: 0.85rem; margin-top: 6px;">💡 ${m.reason}</p>
-                        <button class="btn" style="margin-top: 10px; padding: 8px; font-size: 0.85rem;" onclick="openBottleTonight('${m.b.name}')">Ouvrir 1 bouteille ce soir 🍾</button>
-                    </div>
-                `;
-            });
-            resultsEl.innerHTML = html;
+                    `;
+                });
+                resultsEl.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                resultsEl.innerHTML = `<p style="color: #dc2626; text-align:center; padding: 20px;">Erreur lors de la recherche IA : ${err.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🔍 Demander au Sommelier IA";
+            }
         }
 
         function openBottleTonight(bottleName) {
