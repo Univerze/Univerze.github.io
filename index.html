@@ -105,7 +105,6 @@
     <div class="container">
         <!-- VUE CAVE -->
         <div id="view-cave">
-            <!-- TABLEAU DE BORD STATISTIQUE -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-val" id="stat-total-val">0 €</div>
@@ -127,7 +126,6 @@
                 <button class="btn" style="padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
-            <!-- FILTRES COULEURS / TYPES -->
             <div class="filter-container" id="filter-chips">
                 <div class="filter-chip active" onclick="setFilter('Tous')">Tous</div>
                 <div class="filter-chip" onclick="setFilter('Rouge')">Rouge</div>
@@ -137,7 +135,6 @@
                 <div class="filter-chip" onclick="setFilter('Autres')">Autres</div>
             </div>
 
-            <!-- FILTRES MATURITÉ -->
             <div class="filter-container" id="maturity-chips">
                 <div class="filter-chip active" onclick="setMaturityFilter('Tous')">Maturité : Tous</div>
                 <div class="filter-chip" onclick="setMaturityFilter('Boire')">🟢 Prêt à boire</div>
@@ -278,6 +275,9 @@
             <label>Année (laisser vide si Non Millésimé)</label>
             <input type="number" id="b-year" placeholder="ex: 2025">
 
+            <label>Date d'achat (Année ex: 2026, sert de repère si sans millésime)</label>
+            <input type="number" id="b-purchase-date" placeholder="ex: 2026">
+
             <label>Quantité en stock</label>
             <input type="number" id="b-qty" value="1" min="0">
 
@@ -346,8 +346,8 @@
     </div>
 
     <script>
-        let existingV20 = localStorage.getItem('my_wine_cellar_v20');
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v21') || existingV20 || '[]');
+        let existingV21 = localStorage.getItem('my_wine_cellar_v21');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v22') || existingV21 || '[]');
         let currentFilter = 'Tous';
         let currentMaturityFilter = 'Tous';
         let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
@@ -369,7 +369,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v21', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v22', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -387,9 +387,17 @@
             return 'Bouteille';
         }
 
+        // CALCULATEUR DE MATURITE BASÉ SUR ANNEE DE RECOLTE OU DATE D'ACHAT (NON MILLESIME)
         function getBottleMaturityStatus(b) {
             const currentYear = new Date().getFullYear();
+            let refYear = parseInt(b.year) || parseInt(b.purchaseDate);
             let peakStr = b.customPeak || (b.aiProfile && b.aiProfile.apogee) || '';
+
+            if (!refYear) {
+                // S'il n'y a ni année ni date d'achat, on se base sur l'année en cours
+                refYear = currentYear;
+            }
+
             if (!peakStr) return { code: 'keep', label: '🟡 À garder', class: 'maturite-keep' };
 
             const years = peakStr.match(/\d{4}/g);
@@ -397,6 +405,12 @@
 
             let startYear = parseInt(years[0]);
             let endYear = years.length > 1 ? parseInt(years[1]) : startYear + 2;
+
+            // Si le vin est non millésimé (ex: Champagne NM) et qu'on a une date d'achat, l'apogée IA est souvent relative à l'achat/consommation
+            if (!b.year && b.purchaseDate) {
+                startYear = parseInt(b.purchaseDate) + (startYear - refYear);
+                endYear = parseInt(b.purchaseDate) + (endYear - refYear);
+            }
 
             if (currentYear < startYear) {
                 return { code: 'keep', label: '🟡 À garder', class: 'maturite-keep' };
@@ -553,7 +567,6 @@
             });
 
             document.getElementById('stat-total-val').innerText = `${totalPrice} €`;
-            // Affichage : Total (Prêts à boire)
             document.getElementById('stat-ready-val').innerText = `${totalBottles} (${readyCount})`;
 
             let trackedTotal = redCount + whiteCount + roseCount + champCount;
@@ -561,7 +574,7 @@
                 let rPct = Math.round((redCount / trackedTotal) * 100);
                 let wPct = Math.round((whiteCount / trackedTotal) * 100);
                 let roPct = Math.round((roseCount / trackedTotal) * 100);
-                let cPct = 100 - (rPct + wPct + roPct); // Ajustement arrondi
+                let cPct = 100 - (rPct + wPct + roPct);
                 document.getElementById('stat-ratios').innerText = `R:${rPct}% | B:${wPct}% | Rosé:${roPct}% | Chmp:${cPct}%`;
             } else {
                 document.getElementById('stat-ratios').innerText = `R:0% | B:0% | Rosé:0% | Chmp:0%`;
@@ -610,7 +623,7 @@
                 if(currentMaturityFilter === 'Garder' && mat.code !== 'keep') return;
                 if(currentMaturityFilter === 'Tard' && mat.code !== 'late') return;
 
-                let yearDisplay = b.year ? b.year : 'NM';
+                let yearDisplay = b.year ? b.year : (b.purchaseDate ? `Achat ${b.purchaseDate}` : 'NM');
                 let badgeClass = b.year ? 'badge' : 'badge badge-nm';
                 let userNoteDisplay = (b.userNote !== undefined && b.userNote !== '') ? `⭐ ${b.userNote}/20` : '';
                 
@@ -690,7 +703,7 @@
         }
 
         function generateFallbackProfile(bottle) {
-            let yr = parseInt(bottle.year) || 2024;
+            let yr = parseInt(bottle.year) || parseInt(bottle.purchaseDate) || 2024;
             return {
                 producteur: bottle.name,
                 cepage: "Cépage caractéristique de l'appellation",
@@ -726,12 +739,13 @@
 
         async function fetchFullSommelierProfile(bottle) {
             try {
+                let refYearContext = bottle.year ? `Millésime : ${bottle.year}` : `Non millésimé (Acheté en ${bottle.purchaseDate || '2026'})`;
                 const prompt = `Tu es un maître sommelier expert. Recherche les informations exactes et la fiche technique réelle du producteur pour ce vin :
 - Nom / Producteur / Cuvée : "${bottle.name}"
 - Type : "${bottle.type}"
 - Format : "${bottle.format}"
 - Appellation / Région : "${bottle.appellation}"
-- Millésime : "${bottle.year || 'Non millésimé'}"
+- ${refYearContext}
 
 Utilise la recherche Google pour vérifier le vrai prix public du domaine, la sucrosité exacte, le degré d'alcool, le cépage et la garde réelle.
 
@@ -744,7 +758,7 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
   "profil_intro": "Description style",
   "aromes": ["A1", "A2", "A3", "A4"],
   "garde_conseillee": "Durée",
-  "apogee": "Fourchette",
+  "apogee": "Fourchette d'années",
   "conseil_garde": "Conseil",
   "accords": [{"plat": "P1", "detail": "D1"}, {"plat": "P2", "detail": "D2"}, {"plat": "P3", "detail": "D3"}],
   "autres_accords": "Autres",
@@ -828,6 +842,11 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 document.getElementById('b-type').value = normalizeBottleType(parsed.type);
                 document.getElementById('b-appellation').value = parsed.appellation || "";
                 document.getElementById('b-year').value = parsed.year || "";
+                
+                // Si pas de millésime détecté, on suggère l'année en cours comme date d'achat par défaut
+                if (!parsed.year) {
+                    document.getElementById('b-purchase-date').value = new Date().getFullYear();
+                }
 
                 statusEl.innerText = "✅ Étiquette reconnue ! Cliquez sur Enregistrer.";
             } catch (err) {
@@ -920,6 +939,7 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
                     format: 'Bouteille',
                     appellation: scannedData.appellation || 'France',
                     year: scannedData.year || '',
+                    purchaseDate: scannedData.year ? '' : new Date().getFullYear().toString(),
                     qty: 1,
                     aiProfile: profile
                 };
@@ -1013,6 +1033,7 @@ Renvoie STRICTEMENT un objet JSON valide :
                 format: 'Bouteille',
                 appellation: 'France',
                 year: '',
+                purchaseDate: new Date().getFullYear().toString(),
                 qty: item.quantite || 1,
                 aiProfile: null
             };
@@ -1128,6 +1149,7 @@ Renvoie STRICTEMENT un objet JSON valide :
                 document.getElementById('b-format').value = normalizeBottleFormat(b.format);
                 document.getElementById('b-appellation').value = b.appellation;
                 document.getElementById('b-year').value = b.year || '';
+                document.getElementById('b-purchase-date').value = b.purchaseDate || '';
                 document.getElementById('b-qty').value = b.qty || 1;
                 document.getElementById('b-user-note').value = b.userNote !== undefined ? b.userNote : '';
                 document.getElementById('b-custom-food').value = b.customFood || '';
@@ -1140,6 +1162,7 @@ Renvoie STRICTEMENT un objet JSON valide :
                 document.getElementById('b-format').value = 'Bouteille';
                 document.getElementById('b-appellation').value = '';
                 document.getElementById('b-year').value = '';
+                document.getElementById('b-purchase-date').value = new Date().getFullYear();
                 document.getElementById('b-qty').value = '1';
                 document.getElementById('b-user-note').value = '';
                 document.getElementById('b-custom-food').value = '';
@@ -1157,6 +1180,7 @@ Renvoie STRICTEMENT un objet JSON valide :
             let format = normalizeBottleFormat(document.getElementById('b-format').value);
             let appellation = document.getElementById('b-appellation').value.trim();
             let year = document.getElementById('b-year').value.trim();
+            let purchaseDate = document.getElementById('b-purchase-date').value.trim();
             let qty = parseInt(document.getElementById('b-qty').value) || 1;
             let userNote = document.getElementById('b-user-note').value;
             let customFood = document.getElementById('b-custom-food').value.trim();
@@ -1169,7 +1193,7 @@ Renvoie STRICTEMENT un objet JSON valide :
             }
 
             let existingProfile = (editId !== '' && bottles[editId]) ? bottles[editId].aiProfile : null;
-            let bottleData = { name, type, format, appellation, year, qty, userNote, customFood, customPeak, aiProfile: existingProfile };
+            let bottleData = { name, type, format, appellation, year, purchaseDate, qty, userNote, customFood, customPeak, aiProfile: existingProfile };
 
             const saveBtn = document.getElementById('btn-save-bottle');
             if (!existingProfile) {
@@ -1197,6 +1221,20 @@ Renvoie STRICTEMENT un objet JSON valide :
             saveToStorage();
             closeModal();
             openDetails(targetIndex);
+        }
+
+        // FONCTION DE DUPLICATION DE FICHE DE VIN
+        function duplicateBottle(index) {
+            let source = bottles[index];
+            // On clone l'objet pour créer une nouvelle fiche indépendante
+            let clone = JSON.parse(JSON.stringify(source));
+            clone.name = `${source.name} (Copie)`;
+            clone.qty = 1; // Remet par défaut à 1 ou garde la quantité selon préférence
+            
+            bottles.push(clone);
+            saveToStorage();
+            alert(`Fiche dupliquée avec succès !`);
+            openDetails(bottles.length - 1);
         }
 
         function openSyncModal() { 
@@ -1236,7 +1274,7 @@ Renvoie STRICTEMENT un objet JSON valide :
             let b = bottles[index];
             let displayType = normalizeBottleType(b.type);
             let displayFormat = normalizeBottleFormat(b.format);
-            let yearDisplay = b.year ? b.year : 'Non millésimé';
+            let yearDisplay = b.year ? b.year : (b.purchaseDate ? `Achat ${b.purchaseDate}` : 'Non millésimé');
             let mat = getBottleMaturityStatus(b);
             let p = b.aiProfile;
 
@@ -1302,6 +1340,7 @@ Renvoie STRICTEMENT un objet JSON valide :
                         <h4>4. Caractéristiques techniques</h4>
                         <table class="tech-table">
                             <tr><td>Format</td><td>${displayFormat}</td></tr>
+                            <tr><td>Date d'achat</td><td>${b.purchaseDate ? b.purchaseDate : 'Non renseignée'}</td></tr>
                             <tr><td>Statut Maturité</td><td><span class="badge ${mat.class}">${mat.label}</span></td></tr>
                             <tr><td>Type / Sucrosité</td><td>${ft.style || displayType}</td></tr>
                             <tr><td>Alcool</td><td>${ft.alcool || 'N/C'}</td></tr>
@@ -1355,7 +1394,10 @@ Renvoie STRICTEMENT un objet JSON valide :
                         <h2 style="margin-top: 4px;">${b.name}</h2>
                         <p style="color: var(--text-muted);">${b.appellation} • ${yearDisplay}</p>
                     </div>
-                    <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-top:0;" onclick="openAddModal(${index})">✏️ Modifier</button>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-secondary" style="width: auto; padding: 6px 10px; margin-top:0;" onclick="duplicateBottle(${index})" title="Dupliquer">📋</button>
+                        <button class="btn btn-secondary" style="width: auto; padding: 6px 12px; margin-top:0;" onclick="openAddModal(${index})">✏️ Modifier</button>
+                    </div>
                 </div>
 
                 ${aiHtml}
@@ -1448,7 +1490,7 @@ Renvoie STRICTEMENT un objet JSON valide :
                     type: normalizeBottleType(b.type),
                     format: normalizeBottleFormat(b.format),
                     appellation: b.appellation,
-                    annee: b.year || 'NM',
+                    annee: b.year || `Achat ${b.purchaseDate || 'NM'}`,
                     stock: b.qty
                 }));
 
@@ -1504,7 +1546,6 @@ Renvoie STRICTEMENT un objet JSON valide :
                 });
                 resultsEl.innerHTML = html;
             } catch (err) {
-                resultsEl.username = '';
                 resultsEl.innerHTML = `<p style="color: #dc2626; text-align:center; padding: 20px;">Erreur lors de la recherche.</p>`;
             } finally {
                 btn.disabled = false;
