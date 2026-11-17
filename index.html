@@ -27,7 +27,7 @@
         .btn-secondary { background-color: var(--surface-card); color: var(--text); border: 1px solid var(--border); box-shadow: none; margin-top: 10px; }
         .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        .filter-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+        .filter-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; }
         .filter-container::-webkit-scrollbar { display: none; }
         .filter-chip { background: var(--surface-card); border: 1px solid var(--border); color: var(--text-muted); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; cursor: pointer; transition: all 0.2s; }
         .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: bold; }
@@ -44,6 +44,10 @@
         .badge-ai-ok { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
         .badge-format { background-color: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
         
+        .maturite-drink { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .maturite-keep { background-color: #fef9c3; color: #854d0e; border-color: #fef08a; }
+        .maturite-late { background-color: #fee2e2; color: #991b1b; border-color: #fecaca; }
+
         .type-rouge { color: #dc2626; font-weight: bold; }
         .type-blanc { color: #ca8a04; font-weight: bold; }
         .type-rose { color: #db2777; font-weight: bold; }
@@ -85,6 +89,11 @@
         .score-row { display: flex; gap: 10px; margin-top: 12px; }
         .score-box { flex: 1; background: var(--surface-card); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
         .score-value { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px; text-align: center; }
+        .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--primary); }
+        .stat-lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -96,12 +105,29 @@
     <div class="container">
         <!-- VUE CAVE -->
         <div id="view-cave">
+            <!-- TABLEAU DE BORD STATISTIQUE -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-val" id="stat-total-val">0 €</div>
+                    <div class="stat-lbl">Valeur Cave</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" id="stat-ready-val">0</div>
+                    <div class="stat-lbl">Prêts à boire</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-val" id="stat-pct-red">0%</div>
+                    <div class="stat-lbl">Rouges / Blancs</div>
+                </div>
+            </div>
+
             <div class="card" style="background: linear-gradient(135deg, #fff5f5, #ffffff); border-color: var(--border); margin-bottom: 12px;">
                 <h3 style="color: var(--primary); margin-bottom: 4px;">🍽️ Assistant Repas Sommelier IA</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Gemini analyse votre plat et sélectionne les meilleures bouteilles de votre cave.</p>
                 <button class="btn" style="padding: 10px;" onclick="openPairingAssistant()">Lancer la recherche d'accord</button>
             </div>
 
+            <!-- FILTRES COULEURS / TYPES -->
             <div class="filter-container" id="filter-chips">
                 <div class="filter-chip active" onclick="setFilter('Tous')">Tous</div>
                 <div class="filter-chip" onclick="setFilter('Rouge')">Rouge</div>
@@ -109,6 +135,14 @@
                 <div class="filter-chip" onclick="setFilter('Rosé')">Rosé</div>
                 <div class="filter-chip" onclick="setFilter('Champagne / Effervescent')">Champagne</div>
                 <div class="filter-chip" onclick="setFilter('Autres')">Autres</div>
+            </div>
+
+            <!-- FILTRES MATURITÉ -->
+            <div class="filter-container" id="maturity-chips">
+                <div class="filter-chip active" onclick="setMaturityFilter('Tous')">Maturité : Tous</div>
+                <div class="filter-chip" onclick="setMaturityFilter('Boire')">🟢 Prêt à boire</div>
+                <div class="filter-chip" onclick="setMaturityFilter('Garder')">🟡 À garder</div>
+                <div class="filter-chip" onclick="setMaturityFilter('Tard')">🔴 Trop tard</div>
             </div>
 
             <h2>Mon Inventaire (<span id="bottle-count">0</span>)</h2>
@@ -126,7 +160,7 @@
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
             <div class="card">
                 <h2>Quel vin pour mon plat ?</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Décrivez votre plat (cuisson, sauce, accompagnement) pour une analyse réelle de votre stock :</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Décrivez votre plat ou utilisez le micro pour dicter votre recette :</p>
                 
                 <select id="pairing-preset" onchange="clearPresetOrCustom('preset')">
                     <option value="">-- Choisir une catégorie rapide --</option>
@@ -140,7 +174,11 @@
                     <option value="Dessert fruité / Chocolat / Tarte">Dessert / Chocolat / Tarte</option>
                 </select>
 
-                <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat précisément (ex: bar au beurre blanc)..." oninput="clearPresetOrCustom('custom')">
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <input type="text" id="pairing-custom" placeholder="Ou décrivez votre plat précisément..." oninput="clearPresetOrCustom('custom')" style="margin-bottom: 0;">
+                    <button class="btn" style="width: auto; padding: 0 16px; margin-top:0;" onclick="startVoiceRecognition()" title="Dicter vocalement">🎤</button>
+                </div>
+
                 <button class="btn" id="btn-run-pairing" style="margin-bottom: 16px;" onclick="runPairingSearch()">🔍 Demander au Sommelier IA</button>
 
                 <div id="pairing-results" style="margin-top: 16px;">
@@ -149,26 +187,56 @@
             </div>
         </div>
 
-        <!-- VUE SCAN MAGASIN & CONSEIL ACHAT -->
+        <!-- VUE SCAN MAGASIN & CONSEIL ACHAT + CONSTITUTION CAVE -->
         <div id="view-store" class="hidden">
             <button class="btn btn-secondary" onclick="switchView('cave')" style="margin-bottom: 16px;">← Retour à la cave</button>
-            <div class="card">
-                <h2>🏪 Scanner Magasin & Conseil d'Achat</h2>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">Vous êtes en magasin ? Scannez l'étiquette pour obtenir l'avis du sommelier et savoir si c'est une bonne affaire avant d'acheter.</p>
-                
-                <div style="background: #fdf4f5; border: 1px dashed var(--primary); padding: 14px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
-                    <label style="color: var(--primary); font-weight: bold; cursor: pointer; display: block;">
-                        📷 Scanner la bouteille en rayon
-                        <input type="file" id="store-camera-input" accept="image/*" capture="environment" onchange="scanStoreBottle(event)" style="display: none;">
-                    </label>
-                    <p id="store-scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Analyse instantanée du profil et du rapport qualité-prix.</p>
+            
+            <!-- ONGLET INTERNE MAGASIN -->
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button class="btn" id="subtab-scan-btn" onclick="switchStoreSubTab('scan')" style="font-size:0.9rem; padding: 10px;">📷 Scanner une bouteille</button>
+                <button class="btn btn-secondary" id="subtab-build-btn" onclick="switchStoreSubTab('build')" style="font-size:0.9rem; padding: 10px; margin-top:0;">📋 Constitution de cave</button>
+            </div>
+
+            <!-- SOUS-VUE 1 : SCAN BOUTEILLE -->
+            <div id="store-sub-scan">
+                <div class="card">
+                    <h2>🏪 Scanner Magasin & Conseil d'Achat</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">Scannez une étiquette en rayon pour vérifier si c'est une bonne affaire avant d'acheter.</p>
+                    
+                    <div style="background: #fdf4f5; border: 1px dashed var(--primary); padding: 14px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
+                        <label style="color: var(--primary); font-weight: bold; cursor: pointer; display: block;">
+                            📷 Scanner la bouteille en rayon
+                            <input type="file" id="store-camera-input" accept="image/*" capture="environment" onchange="scanStoreBottle(event)" style="display: none;">
+                        </label>
+                        <p id="store-scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Analyse instantanée du profil et du rapport qualité-prix.</p>
+                    </div>
+
+                    <label>Prix affiché en magasin (€) (Optionnel)</label>
+                    <input type="number" id="store-input-price" step="0.10" placeholder="ex: 12.50">
+
+                    <div id="store-results" style="margin-top: 16px;">
+                        <p style="color: var(--text-muted); text-align:center; padding: 20px;">Scannez une bouteille pour afficher le conseil du sommelier.</p>
+                    </div>
                 </div>
+            </div>
 
-                <label>Prix affiché en magasin (€) (Optionnel)</label>
-                <input type="number" id="store-input-price" step="0.10" placeholder="ex: 12.50">
+            <!-- SOUS-VUE 2 : CONSTITUTION DE CAVE SUR MESURE -->
+            <div id="store-sub-build" class="hidden">
+                <div class="card">
+                    <h2>🛒 Assistant Constitution de Cave</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">Définissez votre budget et vos envies, Gemini vous compose une sélection d'achats idéale :</p>
+                    
+                    <label>Budget total global (€) *</label>
+                    <input type="number" id="build-budget" placeholder="ex: 120">
 
-                <div id="store-results" style="margin-top: 16px;">
-                    <p style="color: var(--text-muted); text-align:center; padding: 20px;">Scannez une bouteille pour afficher le conseil du sommelier.</p>
+                    <label>Nombre et types de bouteilles souhaités *</label>
+                    <input type="text" id="build-request" placeholder="ex: 3 rouges corsés, 2 blancs secs et 1 champagne">
+
+                    <button class="btn" id="btn-run-build" style="margin-bottom: 16px;" onclick="runCaveBuilder()">✨ Générer la sélection d'achats idéale</button>
+
+                    <div id="build-results" style="margin-top: 16px;">
+                        <p style="color: var(--text-muted); text-align:center; padding: 20px;">Indiquez votre budget pour lancer la constitution sur mesure.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -179,13 +247,12 @@
         <div class="card" style="width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
             <h2 id="modal-title" style="margin-bottom: 16px;">Ajouter une bouteille</h2>
             
-            <!-- BOUTON SCANNER ETIQUETTE PAR IA VISION -->
             <div style="background: #fdf4f5; border: 1px dashed var(--primary); padding: 12px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
                 <label style="color: var(--primary); font-weight: bold; cursor: pointer; display: block;">
                     📷 Scanner l'étiquette avec Gemini Vision
                     <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="scanBottleLabelWithGemini(event)" style="display: none;">
                 </label>
-                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Reconnaissance photo + secours automatique en cas de surcharge.</p>
+                <p id="scan-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Reconnaissance photo + secours automatique.</p>
             </div>
 
             <input type="hidden" id="edit-id">
@@ -282,9 +349,10 @@
     </div>
 
     <script>
-        let existingV18 = localStorage.getItem('my_wine_cellar_v18');
-        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v19') || existingV18 || '[]');
+        let existingV19 = localStorage.getItem('my_wine_cellar_v19');
+        let bottles = JSON.parse(localStorage.getItem('my_wine_cellar_v20') || existingV19 || '[]');
         let currentFilter = 'Tous';
+        let currentMaturityFilter = 'Tous';
         let geminiApiKey = localStorage.getItem('gemini_api_key') || '';
         let temporaryStoreBottle = null;
         const GEMINI_MODEL = 'gemini-3.8-flash';
@@ -304,7 +372,7 @@
         }
 
         function saveToStorage() {
-            localStorage.setItem('my_wine_cellar_v19', JSON.stringify(bottles));
+            localStorage.setItem('my_wine_cellar_v20', JSON.stringify(bottles));
             renderCave();
         }
 
@@ -322,10 +390,44 @@
             return 'Bouteille';
         }
 
+        // CALCULATEUR DE MATURITE INTELLIGENT
+        function getBottleMaturityStatus(b) {
+            const currentYear = new Date().getFullYear();
+            let peakStr = b.customPeak || (b.aiProfile && b.aiProfile.apogee) || '';
+            if (!peakStr) return { code: 'keep', label: '🟡 À garder', class: 'maturite-keep' };
+
+            // Recherche d'années dans la chaîne (ex: "2024-2028" ou "2025")
+            const years = peakStr.match(/\d{4}/g);
+            if (!years || years.length === 0) return { code: 'keep', label: '🟡 À garder', class: 'maturite-keep' };
+
+            let startYear = parseInt(years[0]);
+            let endYear = years.length > 1 ? parseInt(years[1]) : startYear + 2;
+
+            if (currentYear < startYear) {
+                return { code: 'keep', label: '🟡 À garder', class: 'maturite-keep' };
+            } else if (currentYear >= startYear && currentYear <= endYear) {
+                return { code: 'drink', label: '🟢 Prêt à boire', class: 'maturite-drink' };
+            } else {
+                return { code: 'late', label: '🔴 Trop tard / Dépassé', class: 'maturite-late' };
+            }
+        }
+
         function setFilter(filterType) {
             currentFilter = filterType;
-            document.querySelectorAll('.filter-chip').forEach(chip => {
+            document.querySelectorAll('#filter-chips .filter-chip').forEach(chip => {
                 if(chip.innerText.toLowerCase() === filterType.toLowerCase() || (filterType === 'Tous' && chip.innerText === 'Tous')) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
+            renderCave();
+        }
+
+        function setMaturityFilter(matType) {
+            currentMaturityFilter = matType;
+            document.querySelectorAll('#maturity-chips .filter-chip').forEach(chip => {
+                if(chip.getAttribute('onclick').includes(matType)) {
                     chip.classList.add('active');
                 } else {
                     chip.classList.remove('active');
@@ -364,9 +466,24 @@
 
         function openStoreScanner() {
             switchView('store');
+            switchStoreSubTab('scan');
             temporaryStoreBottle = null;
             document.getElementById('store-input-price').value = '';
             document.getElementById('store-results').innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Scannez une bouteille pour afficher le conseil du sommelier.</p>`;
+        }
+
+        function switchStoreSubTab(sub) {
+            if(sub === 'scan') {
+                document.getElementById('store-sub-scan').classList.remove('hidden');
+                document.getElementById('store-sub-build').classList.add('hidden');
+                document.getElementById('subtab-scan-btn').classList.remove('btn-secondary');
+                document.getElementById('subtab-build-btn').classList.add('btn-secondary');
+            } else {
+                document.getElementById('store-sub-scan').classList.add('hidden');
+                document.getElementById('store-sub-build').classList.remove('hidden');
+                document.getElementById('subtab-scan-btn').classList.add('btn-secondary');
+                document.getElementById('subtab-build-btn').classList.remove('btn-secondary');
+            }
         }
 
         function clearPresetOrCustom(source) {
@@ -374,19 +491,106 @@
             else document.getElementById('pairing-preset').value = '';
         }
 
+        // RECONNAISSANCE VOCALE POUR LES PLATS
+        function startVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("La reconnaissance vocale n'est pas supportée par votre navigateur/appareil.");
+                return;
+            }
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'fr-FR';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                document.getElementById('pairing-custom').placeholder = "🎤 Parlez, j'écoute...";
+            };
+
+            recognition.onresult = (event) => {
+                const speechResult = event.results[0][0].transcript;
+                document.getElementById('pairing-custom').value = speechResult;
+                clearPresetOrCustom('custom');
+            };
+
+            recognition.onerror = () => {
+                alert("Erreur de reconnaissance vocale.");
+                document.getElementById('pairing-custom').placeholder = "Ou décrivez votre plat précisément...";
+            };
+
+            recognition.onend = () => {
+                document.getElementById('pairing-custom').placeholder = "Ou décrivez votre plat précisément...";
+            };
+
+            recognition.start();
+        }
+
+        // MISE A JOUR DU TABLEAU DE BORD STATISTIQUE
+        function updateDashboardStats() {
+            let totalBottles = 0;
+            let totalPrice = 0;
+            let readyCount = 0;
+            let redCount = 0;
+            let whiteCount = 0;
+
+            bottles.forEach(b => {
+                let qty = parseInt(b.qty || 1);
+                totalBottles += qty;
+
+                // Estimation prix
+                let p = b.aiProfile;
+                if(p && p.prix_public) {
+                    let numbers = p.prix_public.match(/\d+/g);
+                    if(numbers && numbers.length > 0) {
+                        let avgPrice = parseFloat(numbers[0]);
+                        totalPrice += avgPrice * qty;
+                    }
+                }
+
+                // Maturité
+                let mat = getBottleMaturityStatus(b);
+                if(mat.code === 'drink') readyCount += qty;
+
+                // Types
+                let normType = normalizeBottleType(b.type);
+                if(normType === 'Rouge') redCount += qty;
+                if(normType === 'Blanc') whiteCount += qty;
+            });
+
+            document.getElementById('stat-total-val').innerText = `${totalPrice} €`;
+            document.getElementById('stat-ready-val').innerText = readyCount;
+            
+            let redWhiteTotal = redCount + whiteCount;
+            let redPct = redWhiteTotal > 0 ? Math.round((redCount / redWhiteTotal) * 100) : 50;
+            document.getElementById('stat-pct-red').innerText = `${redPct}% R / ${100 - redPct}% B`;
+        }
+
         function renderCave() {
             const listEl = document.getElementById('bottle-list');
+            updateDashboardStats();
+
             let filteredBottles = bottles.filter(b => {
                 let normType = normalizeBottleType(b.type);
-                if(currentFilter === 'Tous') return true;
-                if(currentFilter === 'Autres') return normType === 'Autres';
-                return normType === currentFilter;
+                let mat = getBottleMaturityStatus(b);
+
+                // Filtre Type
+                let matchType = (currentFilter === 'Tous') || 
+                                (currentFilter === 'Autres' && normType === 'Autres') ||
+                                (normType === currentFilter);
+                if(!matchType) return false;
+
+                // Filtre Maturité
+                if(currentMaturityFilter === 'Boire' && mat.code !== 'drink') return false;
+                if(currentMaturityFilter === 'Garder' && mat.code !== 'keep') return false;
+                if(currentMaturityFilter === 'Tard' && mat.code !== 'late') return false;
+
+                return true;
             });
 
             document.getElementById('bottle-count').innerText = bottles.reduce((acc, b) => acc + parseInt(b.qty || 1), 0);
 
             if(filteredBottles.length === 0) {
-                listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">Aucune bouteille trouvée dans cette catégorie.</div>`;
+                listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-muted);">Aucune bouteille trouvée avec ces filtres.</div>`;
                 return;
             }
 
@@ -394,10 +598,17 @@
             bottles.forEach((b, index) => {
                 let normType = normalizeBottleType(b.type);
                 let normFormat = normalizeBottleFormat(b.format);
-                let matchesFilter = (currentFilter === 'Tous') || 
-                                    (currentFilter === 'Autres' && normType === 'Autres') ||
-                                    (normType === currentFilter);
-                if(!matchesFilter) return;
+                
+                // Application des filtres sur l'index global
+                let matchType = (currentFilter === 'Tous') || 
+                                (currentFilter === 'Autres' && normType === 'Autres') ||
+                                (normType === currentFilter);
+                if(!matchType) return;
+
+                let mat = getBottleMaturityStatus(b);
+                if(currentMaturityFilter === 'Boire' && mat.code !== 'drink') return;
+                if(currentMaturityFilter === 'Garder' && mat.code !== 'keep') return;
+                if(currentMaturityFilter === 'Tard' && mat.code !== 'late') return;
 
                 let yearDisplay = b.year ? b.year : 'NM';
                 let badgeClass = b.year ? 'badge' : 'badge badge-nm';
@@ -421,8 +632,8 @@
                             <div style="display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap;">
                                 <span class="${badgeClass}">${yearDisplay}</span>
                                 <span class="badge badge-format">${normFormat}</span>
+                                <span class="badge ${mat.class}">${mat.label}</span>
                                 <span class="badge" style="background:#f1f5f9;">Qté: ${b.qty}</span>
-                                <span class="badge badge-peak">⏳ ${peakDisplay}</span>
                                 ${hasRealAI ? `<span class="badge badge-ai-ok">✨ Fiche IA</span>` : ''}
                                 ${userNoteDisplay ? `<span class="badge badge-note">${userNoteDisplay}</span>` : ''}
                             </div>
@@ -627,7 +838,6 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
             }
         }
 
-        // SCAN SPECIAL MAGASIN (CONSEIL ACHAT SANS AJOUTER AUTOMATIQUEMENT)
         async function scanStoreBottle(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -648,7 +858,6 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
                 const resizedDataUrl = await resizeImage(file, 1024, 1024);
                 const cleanBase64 = resizedDataUrl.split(',')[1];
 
-                // 1. Reconnaissance photo
                 const scanPrompt = `Analyse cette étiquette de vin en magasin. Renvoie STRICTEMENT un objet JSON valide :
 {
   "name": "Producteur + Nom de cuvée",
@@ -664,7 +873,6 @@ Renvoie STRICTEMENT un objet JSON valide sans aucun texte autour avec cette stru
 
                 statusEl.innerText = "⏳ Recherche du profil et comparaison des prix...";
 
-                // 2. Fiche complète + Comparaison prix magasin si renseigné
                 let storePriceContext = storePrice ? ` Le prix affiché dans ce magasin est de ${storePrice} €.` : "";
                 const profilePrompt = `Tu es un maître sommelier expert. Recherche les informations exactes pour ce vin scanné en magasin :
 - Nom : "${scannedData.name}"
@@ -694,7 +902,7 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
   "verdict_achat": {
     "est_bon_achat": true/false,
     "rapport_qualite_prix": "Excellent / Correct / Trop cher",
-    "explication_achat": "Analyse détaillée du prix par rapport au marché et de l'intérêt d'acheter ce vin."
+    "explication_achat": "Analyse détaillée du prix par rapport au marché"
   },
   "avis_sommelier": "Conclusion"
 }`;
@@ -726,6 +934,102 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
             }
         }
 
+        // ASSISTANT CONSTITUTION DE CAVE SUR MESURE
+        async function runCaveBuilder() {
+            let budget = document.getElementById('build-budget').value.trim();
+            let req = document.getElementById('build-request').value.trim();
+            let resultsEl = document.getElementById('build-results');
+            let btn = document.getElementById('btn-run-build');
+
+            if(!budget || !req) {
+                alert("Veuillez renseigner le budget et votre demande de constitution.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Le Sommelier compose votre sélection...";
+            resultsEl.innerHTML = `<p style="color: var(--text-muted); text-align:center; padding: 20px;">Recherche des meilleures quilles pour ${budget} €...</p>`;
+
+            try {
+                const prompt = `Tu es un maître sommelier. L'utilisateur souhaite constituer une sélection d'achats de vin selon ces critères :
+- Budget total : ${budget} €
+- Demande / Composition : "${req}"
+
+Propose une sélection cohérente de bouteilles (avec appellations, producteurs types, prix unitaires estimés et justification) qui respecte au mieux ce budget total.
+
+Renvoie STRICTEMENT un objet JSON valide :
+{
+  "selection": [
+    {
+      "nom": "Producteur + Appellation / Cuvée",
+      "type": "Rouge, Blanc, Rosé, Champagne / Effervescent ou Autres",
+      "prix_estime": "Prix unitaire (ex: 15 €)",
+      "quantite": 1,
+      "pourquoi": "Pourquoi ce choix correspond à la demande"
+    }
+  ],
+  "synthese_budget": "Commentaire sur le respect du budget et l'équilibre de la sélection"
+}`;
+
+                let data;
+                try {
+                    data = await callGeminiAPI([{ text: prompt }], true);
+                } catch(e) {
+                    data = {
+                        selection: [
+                            { nom: "Bordeaux Rouge AOC", type: "Rouge", prix_estime: "12 €", quantite: 2, pourquoi: "Un rouge classique et souple." },
+                            { nom: "Bourgogne Blanc AOC", type: "Blanc", prix_estime: "18 €", quantite: 1, pourquoi: "Un blanc frais et minéral." }
+                        ],
+                        synthese_budget: "Sélection de secours équilibrée respectant approximativement le budget."
+                    };
+                }
+
+                let html = `<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;"><b>Synthèse Sommelier :</b> ${data.synthese_budget}</p>`;
+                (data.selection || []).forEach((item, idx) => {
+                    html += `
+                        <div class="card" style="background: var(--surface); margin-bottom: 10px; border-left: 4px solid var(--primary);">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong>${item.nom}</strong>
+                                <span class="badge" style="background:#dcfce7; color:#166534;">${item.prix_estime}</span>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">${item.type} • Quantité conseillée : ${item.quantite}</p>
+                            <p style="font-size: 0.85rem; margin-top: 6px;">💡 ${item.pourquoi}</p>
+                            <button class="btn" style="margin-top: 10px; padding: 8px; font-size: 0.85rem;" onclick='addBuilderItemToCave(${JSON.stringify(item)})'>🛒 Ajouter à ma cave 🍾</button>
+                        </div>
+                    `;
+                });
+                resultsEl.innerHTML = html;
+            } catch (err) {
+                resultsEl.innerHTML = `<p style="color: #dc2626; text-align:center; padding: 20px;">Erreur lors de la constitution de cave.</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "✨ Générer la sélection d'achats idéale";
+            }
+        }
+
+        async function addBuilderItemToCave(item) {
+            let bottleData = {
+                name: item.nom,
+                type: normalizeBottleType(item.type),
+                format: 'Bouteille',
+                appellation: 'France',
+                year: '',
+                qty: item.quantite || 1,
+                aiProfile: null
+            };
+            
+            try {
+                bottleData.aiProfile = await fetchFullSommelierProfile(bottleData);
+            } catch(e) {
+                bottleData.aiProfile = generateFallbackProfile(bottleData);
+            }
+
+            bottles.push(bottleData);
+            saveToStorage();
+            alert(`"${item.nom}" a été ajouté à votre cave avec succès !`);
+            openDetails(bottles.length - 1);
+        }
+
         function renderStoreResults(b, storePrice) {
             let p = b.aiProfile;
             let resultsEl = document.getElementById('store-results');
@@ -736,26 +1040,21 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
                     <p style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">${acc.detail}</p>
                 </div>
             `).join('');
-            let ft = p.fiche_technique || {};
             let v = p.verdict_achat || {};
 
             let verdictBadgeStyle = v.est_bon_achat ? "background:#d1fae5; color:#065f46; border:1px solid #a7f3d0;" : "background:#fee2e2; color:#991b1b; border:1px solid #fecaca;";
             let verdictText = v.est_bon_achat ? "🟢 CONSEIL D'ACHAT : BONNE AFFAIRE" : "🔴 ATTENTION : PRIX ÉLEVÉ / MOYEN";
-
             let storePriceDisplay = storePrice ? `<p style="font-size:0.9rem; margin-top:4px;">Prix affiché en rayon : <strong>${storePrice} €</strong></p>` : "";
 
             resultsEl.innerHTML = `
                 <div class="card" style="background:var(--surface); border-left: 5px solid var(--primary);">
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <div>
-                            <span class="badge">${b.type}</span>
-                            <h3 style="margin-top:6px; font-size:1.2rem;">${b.name}</h3>
-                            <p style="color:var(--text-muted); font-size:0.85rem;">${b.appellation} • ${b.year || 'NM'}</p>
-                            ${storePriceDisplay}
-                        </div>
+                    <div>
+                        <span class="badge">${b.type}</span>
+                        <h3 style="margin-top:6px; font-size:1.2rem;">${b.name}</h3>
+                        <p style="color:var(--text-muted); font-size:0.85rem;">${b.appellation} • ${b.year || 'NM'}</p>
+                        ${storePriceDisplay}
                     </div>
 
-                    <!-- VERDICT ACHAT -->
                     <div style="margin-top:14px; padding:12px; border-radius:10px; ${verdictBadgeStyle}">
                         <div style="font-weight:bold; font-size:0.9rem;">${verdictText}</div>
                         <p style="font-size:0.85rem; margin-top:4px;">${v.explication_achat || ''}</p>
@@ -939,6 +1238,7 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
             let displayType = normalizeBottleType(b.type);
             let displayFormat = normalizeBottleFormat(b.format);
             let yearDisplay = b.year ? b.year : 'Non millésimé';
+            let mat = getBottleMaturityStatus(b);
             let p = b.aiProfile;
 
             let aiHtml = '';
@@ -1003,6 +1303,7 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
                         <h4>4. Caractéristiques techniques</h4>
                         <table class="tech-table">
                             <tr><td>Format</td><td>${displayFormat}</td></tr>
+                            <tr><td>Statut Maturité</td><td><span class="badge ${mat.class}">${mat.label}</span></td></tr>
                             <tr><td>Type / Sucrosité</td><td>${ft.style || displayType}</td></tr>
                             <tr><td>Alcool</td><td>${ft.alcool || 'N/C'}</td></tr>
                             <tr><td>Sucre résiduel</td><td>${ft.sucre_residuel || 'N/C'}</td></tr>
@@ -1047,9 +1348,10 @@ Renvoie STRICTEMENT un objet JSON valide avec cette structure exacte :
             let content = `
                 <div style="display:flex; justify-content:space-between; align-items:start;">
                     <div>
-                        <div style="display:flex; gap:6px; margin-bottom:4px;">
+                        <div style="display:flex; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
                             <span class="badge">${displayType}</span>
                             <span class="badge badge-format">${displayFormat}</span>
+                            <span class="badge ${mat.class}">${mat.label}</span>
                         </div>
                         <h2 style="margin-top: 4px;">${b.name}</h2>
                         <p style="color: var(--text-muted);">${b.appellation} • ${yearDisplay}</p>
